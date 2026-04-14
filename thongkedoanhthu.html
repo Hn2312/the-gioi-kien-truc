@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thống kê doanh thu - Admin</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+
+        /* Tối ưu mobile */
+        @layer base {
+            html { font-size: 16px; }
+            button, input { min-height: 52px; }
+        }
+    </style>
+</head>
+<body class="bg-[#fce7f3] min-h-screen">
+
+<div class="max-w-7xl mx-auto px-4 py-8" id="reportContent">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="heading-font text-4xl font-bold">📊 Thống kê doanh thu</h1>
+        <div class="flex gap-3">
+            <a href="admin.html" class="bg-white px-6 py-3 rounded-3xl flex items-center gap-2 hover:bg-gray-100">
+                ← Quay lại Admin
+            </a>
+            <button onclick="exportPDF()" 
+                    class="bg-[#f06292] text-white px-6 py-3 rounded-3xl flex items-center gap-2 hover:bg-[#ec407a]">
+                <i class="fa-solid fa-file-pdf"></i> Xuất PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Bộ lọc theo tháng -->
+    <div class="bg-white rounded-3xl p-6 shadow-xl mb-8">
+        <div class="flex flex-wrap items-end gap-6">
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">Từ tháng</label>
+                <input type="month" id="fromMonth" class="border border-gray-300 rounded-2xl px-4 py-3 focus:border-[#f06292] outline-none">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">Đến tháng</label>
+                <input type="month" id="toMonth" class="border border-gray-300 rounded-2xl px-4 py-3 focus:border-[#f06292] outline-none">
+            </div>
+            <button onclick="applyFilter()" 
+                    class="bg-[#f06292] text-white px-8 py-3 rounded-3xl hover:bg-[#ec407a]">
+                Áp dụng lọc
+            </button>
+            <button onclick="resetFilter()" 
+                    class="border border-gray-400 text-gray-700 px-6 py-3 rounded-3xl hover:bg-gray-100">
+                Reset
+            </button>
+        </div>
+    </div>
+
+    <!-- Thẻ tóm tắt -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10" id="summaryCards"></div>
+
+    <!-- Biểu đồ -->
+    <div class="bg-white rounded-3xl p-8 shadow-xl mb-10">
+        <h2 class="text-2xl font-semibold mb-6" id="chartTitle">Doanh thu theo tháng</h2>
+        <canvas id="revenueChart" height="130"></canvas>
+    </div>
+
+    <!-- Breakdown theo phương thức thanh toán -->
+    <div class="bg-white rounded-3xl p-8 shadow-xl">
+        <h2 class="text-2xl font-semibold mb-6">Doanh thu theo phương thức thanh toán</h2>
+        <div id="paymentBreakdown" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </div>
+</div>
+
+<script>
+// ==================== SUPABASE ====================
+const supabaseClient = supabase.createClient(
+    'https://bmtoaaajobrqgmjidtgf.supabase.co',
+    'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO'
+);
+
+let chartInstance = null;
+
+// ==================== TẢI THỐNG KÊ ====================
+async function loadRevenueStats(fromDate = null, toDate = null) {
+    let query = supabaseClient
+        .from('orders')
+        .select('total, status, payment_method, created_at')
+        .order('created_at', { ascending: false });
+
+    if (fromDate) query = query.gte('created_at', fromDate);
+    if (toDate) query = query.lte('created_at', toDate + 'T23:59:59.999Z');
+
+    const { data: orders, error } = await query;
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    let totalRevenue = 0;
+    let deliveredRevenue = 0;
+    const monthlyRevenue = {};
+    const paymentStats = {};
+
+    const allMonths = [];
+    let current = new Date(fromDate || new Date().getFullYear() + '-01-01');
+    const end = new Date(toDate || new Date());
+
+    while (current <= end) {
+        const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+        allMonths.push(key);
+        monthlyRevenue[key] = 0;
+        current.setMonth(current.getMonth() + 1);
+    }
+
+    orders.forEach(order => {
+        const amount = Number(order.total) || 0;
+        totalRevenue += amount;
+        if (order.status === 'delivered') deliveredRevenue += amount;
+
+        const date = new Date(order.created_at);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (monthlyRevenue[monthKey] !== undefined) monthlyRevenue[monthKey] += amount;
+
+        const method = order.payment_method || 'khac';
+        paymentStats[method] = (paymentStats[method] || 0) + amount;
+    });
+
+    renderSummaryCards(totalRevenue, deliveredRevenue, orders.length);
+    renderMonthlyChart(monthlyRevenue, allMonths);
+    renderPaymentBreakdown(paymentStats);
+}
+
+function renderSummaryCards(total, delivered, count) {
+    const html = `
+        <div class="bg-white rounded-3xl p-6 shadow text-center">
+            <p class="text-gray-500">Tổng doanh thu</p>
+            <p class="text-4xl font-bold text-[#f06292]">${total.toLocaleString('vi-VN')} ₫</p>
+        </div>
+        <div class="bg-white rounded-3xl p-6 shadow text-center">
+            <p class="text-gray-500">Doanh thu đã giao</p>
+            <p class="text-4xl font-bold text-green-600">${delivered.toLocaleString('vi-VN')} ₫</p>
+        </div>
+        <div class="bg-white rounded-3xl p-6 shadow text-center">
+            <p class="text-gray-500">Tổng số đơn hàng</p>
+            <p class="text-4xl font-bold">${count}</p>
+        </div>
+    `;
+    document.getElementById('summaryCards').innerHTML = html;
+}
+
+function renderMonthlyChart(monthlyData, allMonths) {
+    const labels = allMonths;
+    const data = labels.map(key => monthlyData[key] || 0);
+
+    const ctx = document.getElementById('revenueChart');
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: data,
+                backgroundColor: '#f06292',
+                borderColor: '#ec407a',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('vi-VN') + ' ₫' } }
+            }
+        }
+    });
+}
+
+function renderPaymentBreakdown(stats) {
+    const container = document.getElementById('paymentBreakdown');
+    let html = '';
+    Object.keys(stats).forEach(method => {
+        html += `
+            <div class="bg-gray-50 rounded-2xl p-6 flex justify-between items-center">
+                <span class="font-medium text-lg">${method.toUpperCase()}</span>
+                <span class="font-bold text-[#f06292] text-xl">${stats[method].toLocaleString('vi-VN')} ₫</span>
+            </div>`;
+    });
+    container.innerHTML = html || '<p class="text-gray-500 col-span-2 text-center">Chưa có dữ liệu</p>';
+}
+
+// ==================== LỌC ====================
+function applyFilter() {
+    const from = document.getElementById('fromMonth').value;
+    const to = document.getElementById('toMonth').value;
+    loadRevenueStats(from ? from + '-01' : null, to ? to : null);
+}
+
+function resetFilter() {
+    document.getElementById('fromMonth').value = '';
+    document.getElementById('toMonth').value = '';
+    loadRevenueStats();
+}
+
+// ==================== XUẤT PDF (ẨN NÚT TỰ ĐỘNG) ====================
+async function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Tạm ẩn nút trước khi chụp
+    const buttons = document.querySelectorAll('#reportContent .flex.gap-3');
+    if (buttons.length > 0) buttons[0].style.display = 'none';
+
+    const element = document.getElementById('reportContent');
+    
+    const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+    });
+
+    // Hiện lại nút sau khi chụp
+    if (buttons.length > 0) buttons[0].style.display = 'flex';
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+    doc.save(`BaoCao_DoanhThu_${new Date().toISOString().slice(0,10)}.pdf`);
+    alert("✅ Đã xuất file PDF thành công!\nChữ tiếng Việt và bố cục đã đẹp.");
+}
+
+// Khởi động
+window.onload = () => {
+    loadRevenueStats();
+};
+</script>
+</body>
+</html>

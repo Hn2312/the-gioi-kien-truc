@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Đăng nhập / Đăng ký - THẾ GIỚI KIẾN TRÚC</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+        
+        /* Tối ưu mobile */
+        @layer base {
+            html { font-size: 16px; }
+            input, button { min-height: 52px; }
+        }
+        
+        .tab-active {
+            border-bottom: 3px solid #f06292;
+            color: #f06292;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-[#fce7f3] min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 md:p-10">
+        
+        <div class="flex border-b mb-8">
+            <button onclick="switchTab(0)" id="loginTab" 
+                    class="flex-1 py-4 text-center tab-active text-lg">Đăng nhập</button>
+            <button onclick="switchTab(1)" id="registerTab" 
+                    class="flex-1 py-4 text-center text-lg">Đăng ký</button>
+        </div>
+
+        <!-- Form Đăng nhập -->
+        <div id="loginForm">
+            <div class="space-y-6">
+                <input id="loginEmail" type="email" placeholder="Email" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400">
+
+                <input id="loginPassword" type="password" placeholder="Mật khẩu" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400"
+                       onkeypress="if(event.key === 'Enter') loginCustomer()">
+                
+                <button onclick="loginCustomer()" 
+                        class="w-full bg-[#f06292] hover:bg-[#ec407a] text-white py-5 rounded-3xl font-semibold text-lg active:scale-95 transition">
+                    ĐĂNG NHẬP
+                </button>
+            </div>
+        </div>
+
+        <!-- Form Đăng ký -->
+        <div id="registerForm" class="hidden">
+            <div class="space-y-6">
+                <input id="registerName" type="text" placeholder="Họ và tên *" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400">
+                
+                <input id="registerEmail" type="email" placeholder="Email *" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400">
+                
+                <input id="registerPhone" type="tel" placeholder="Số điện thoại *" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400">
+                
+                <input id="registerPassword" type="password" placeholder="Mật khẩu *" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400"
+                       onkeypress="if(event.key === 'Enter') registerCustomer()">
+                
+                <button onclick="registerCustomer()" 
+                        class="w-full bg-[#f06292] hover:bg-[#ec407a] text-white py-5 rounded-3xl font-semibold text-lg active:scale-95 transition">
+                    TẠO TÀI KHOẢN
+                </button>
+            </div>
+        </div>
+
+        <p id="authMessage" class="text-center text-sm mt-6 min-h-[28px]"></p>
+
+        <div class="text-center mt-8">
+            <a href="index.html" class="text-gray-500 hover:text-[#f06292] text-sm">← Quay về trang chủ</a>
+        </div>
+    </div>
+
+<script>
+// Khởi tạo Supabase
+const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO';
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function registerCustomer() {
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const phone = document.getElementById('registerPhone').value.trim();
+    const password = document.getElementById('registerPassword').value.trim();
+    const messageEl = document.getElementById('authMessage');
+
+    if (!name || !email || !phone || !password) {
+        messageEl.innerHTML = '<span class="text-red-500">Vui lòng điền đầy đủ thông tin</span>';
+        return;
+    }
+
+    messageEl.innerHTML = '<span class="text-gray-500">Đang xử lý đăng ký...</span>';
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('users')
+            .insert([{ name, email, phone, password }])
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') {
+                messageEl.innerHTML = '<span class="text-red-500">Email này đã được sử dụng!</span>';
+            } else {
+                messageEl.innerHTML = `<span class="text-red-500">Lỗi: ${error.message}</span>`;
+            }
+            return;
+        }
+
+        messageEl.innerHTML = '<span class="text-green-500">✅ Đăng ký thành công!</span>';
+
+        setTimeout(() => {
+            localStorage.setItem('currentUser', JSON.stringify(data));
+            switchTab(0);
+            document.getElementById('loginEmail').value = email;
+        }, 1200);
+
+    } catch (err) {
+        messageEl.innerHTML = '<span class="text-red-500">Có lỗi xảy ra, vui lòng thử lại</span>';
+    }
+}
+
+async function loginCustomer() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const messageEl = document.getElementById('authMessage');
+
+    if (!email || !password) {
+        messageEl.innerHTML = '<span class="text-red-500">Vui lòng nhập email và mật khẩu</span>';
+        return;
+    }
+
+    messageEl.innerHTML = '<span class="text-gray-500">Đang đăng nhập...</span>';
+
+    const { data, error } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+    if (error || !data) {
+        messageEl.innerHTML = '<span class="text-red-500">Email hoặc mật khẩu không đúng!</span>';
+        return;
+    }
+
+    localStorage.setItem('currentUser', JSON.stringify(data));
+    messageEl.innerHTML = '<span class="text-green-500">✅ Đăng nhập thành công!</span>';
+    
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 800);
+}
+
+function switchTab(tab) {
+    if (tab === 0) {
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('registerForm').classList.add('hidden');
+        document.getElementById('loginTab').classList.add('tab-active');
+        document.getElementById('registerTab').classList.remove('tab-active');
+    } else {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('registerForm').classList.remove('hidden');
+        document.getElementById('loginTab').classList.remove('tab-active');
+        document.getElementById('registerTab').classList.add('tab-active');
+    }
+}
+</script>
+
+</body>
+</html>

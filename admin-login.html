@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Đăng nhập Admin - THẾ GIỚI KIẾN TRÚC</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+        
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+        
+        /* Tối ưu mobile */
+        @layer base {
+            html { font-size: 16px; }
+            input, button {
+                min-height: 52px; /* Dễ bấm trên điện thoại */
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#fce7f3] min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 md:p-10">
+        
+        <div class="text-center mb-10">
+            <div class="w-20 h-20 bg-[#f06292] text-white rounded-3xl flex items-center justify-center text-5xl font-bold mx-auto shadow-inner">
+                LL
+            </div>
+            <h1 class="heading-font text-3xl md:text-4xl font-bold mt-6 text-gray-800">Admin Login</h1>
+            <p class="text-gray-500 mt-2">Quản lý sản phẩm và đơn hàng</p>
+        </div>
+
+        <div class="space-y-6">
+            <input id="email" 
+                   type="email" 
+                   placeholder="Email admin" 
+                   class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400">
+
+            <input id="password" 
+                   type="password" 
+                   placeholder="Mật khẩu" 
+                   class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base placeholder:text-gray-400">
+
+            <button onclick="loginAdmin()" id="loginBtn"
+                    class="w-full bg-[#f06292] hover:bg-[#ec407a] text-white py-4 rounded-3xl font-semibold text-lg transition-all active:scale-[0.97] shadow-lg">
+                ĐĂNG NHẬP
+            </button>
+
+            <p id="message" class="text-center text-sm min-h-[28px]"></p>
+        </div>
+
+        <div class="text-center mt-8 text-xs text-gray-400">
+            Chỉ dành cho quản trị viên hệ thống
+        </div>
+    </div>
+
+<script>
+function loginAdmin() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const messageEl = document.getElementById('message');
+    const btn = document.getElementById('loginBtn');
+
+    messageEl.innerHTML = '';
+
+    if (!email || !password) {
+        messageEl.innerHTML = '<span class="text-red-500">Vui lòng nhập đầy đủ email và mật khẩu</span>';
+        return;
+    }
+
+    if (email === "lamlamkts@gmail.com" && password === "Lamlamkts123") {
+        btn.innerHTML = 'Đang đăng nhập...';
+        btn.disabled = true;
+
+        localStorage.setItem('adminLoggedIn', 'true');
+
+        setTimeout(() => {
+            window.location.href = 'admin.html';
+        }, 600);
+    } else {
+        messageEl.innerHTML = '<span class="text-red-500">Sai email hoặc mật khẩu!</span>';
+    }
+}
+
+// Nhấn Enter trên ô mật khẩu cũng đăng nhập được
+document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') loginAdmin();
+});
+</script>
+
+</body>
+</html>

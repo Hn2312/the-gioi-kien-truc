@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sản phẩm - THẾ GIỚI KIẾN TRÚC</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+        
+        @layer base {
+            html { font-size: 16px; }
+            button, input { min-height: 52px; }
+        }
+
+        .product-card { transition: all 0.4s ease; }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgb(240 98 146 / 0.15); }
+
+        .product-image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        .product-img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .product-card:hover .product-img { transform: scale(1.08); }
+
+        .sale-price {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #f06292;
+        }
+
+        /* Dropdown danh mục */
+        .category-wrapper { position: relative; }
+        .category-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15);
+            min-width: 260px;
+            z-index: 9999;
+            padding: 8px 0;
+            margin-top: 4px;
+        }
+        .category-dropdown.show { display: block; }
+        .category-dropdown a {
+            display: block;
+            padding: 12px 24px;
+            color: #374151;
+            font-weight: 500;
+        }
+        .category-dropdown a:hover {
+            background: #fce7f3;
+            color: #f06292;
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            animation: toastSlideIn 0.4s ease forwards;
+        }
+        @keyframes toastSlideIn {
+            from { transform: translateY(80px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-[#fce7f3]">
+
+    <!-- NAVBAR -->
+    <nav class="bg-[#f06292] text-white sticky top-0 z-50 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <h1 onclick="window.location.href='index.html'" class="heading-font text-2xl md:text-3xl font-semibold cursor-pointer">
+                    THẾ GIỚI KIẾN TRÚC
+                </h1>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+                <a href="index.html" class="hover:text-pink-100">Trang chủ</a>
+                <a href="index.html#dichvu" class="hover:text-pink-100">Dịch vụ</a>
+                <a href="index.html#vechungtoi" class="hover:text-pink-100">Về chúng tôi</a>
+                <a href="sanpham.html" class="font-bold text-white">Sản phẩm</a>
+                <a href="index.html#lienhe" class="hover:text-pink-100">Liên hệ</a>
+            </div>
+
+            <div class="flex items-center gap-5">
+                <button onclick="goToCart()" class="relative text-white hover:text-pink-100">
+                    <i class="fa-solid fa-shopping-cart text-2xl"></i>
+                    <span id="cartCount" class="absolute -top-1 -right-1 bg-white text-[#f06292] text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full hidden">0</span>
+                </button>
+                <a href="lichsu.html" class="text-white hover:text-pink-100">
+                    <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
+                </a>
+                <button onclick="showNotifications()" class="relative text-white hover:text-pink-100">
+                    <i class="fa-solid fa-bell text-2xl"></i>
+                </button>
+                <button onclick="handleAuthClick()" id="authButton" class="text-white hover:text-pink-100">
+                    <i class="fa-solid fa-user text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <h1 id="pageTitle" class="heading-font text-4xl md:text-5xl font-bold text-[#f06292]">Tất cả sản phẩm</h1>
+            
+            <div class="category-wrapper">
+                <button onclick="toggleCategoryDropdown()" 
+                        class="flex items-center gap-3 bg-white text-[#f06292] px-6 py-3 rounded-3xl font-medium border border-pink-200 hover:border-[#f06292]">
+                    <i class="fa-solid fa-list-ul"></i>
+                    Danh mục
+                    <i id="chevron" class="fa-solid fa-chevron-down transition-transform"></i>
+                </button>
+                <div id="categoryDropdown" class="category-dropdown"></div>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <input id="searchInput" onkeyup="if(event.key==='Enter') filterProducts()" 
+                   placeholder="🔍 Tìm kiếm sản phẩm..." 
+                   class="w-full px-6 py-4 border border-pink-300 rounded-3xl focus:outline-none focus:border-[#f06292]">
+        </div>
+
+        <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 max-w-xs"></div>
+
+<script>
+// ==================== SUPABASE ====================
+const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO'; 
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ==================== REALTIME NOTIFICATION (ĐÃ SỬA) ====================
+const channel = client.channel('new-purchase');
+
+channel
+  .on('broadcast', { event: 'new-order' }, (payload) => {
+      // FIX: Dữ liệu thật nằm trong payload.payload
+      const data = payload.payload || payload;
+      const { customerName, productName, productImage } = data;
+      if (customerName && productName) {
+          showPurchaseToast(customerName, productName, productImage);
+      }
+  })
+  .subscribe();
+
+// Hiển thị toast kèm ảnh
+function showPurchaseToast(customerName, productName, productImage) {
+    const toastHTML = `
+        <div class="toast-notification bg-white shadow-2xl border border-pink-200 rounded-3xl p-4 flex items-center gap-4 w-80">
+            <img src="${productImage}" class="w-14 h-14 object-cover rounded-2xl flex-shrink-0" alt="${productName}">
+            <div class="flex-1">
+                <p class="font-medium text-xs text-gray-500">Có người vừa mua</p>
+                <p class="font-semibold leading-tight">${customerName} vừa mua <span class="text-[#f06292]">${productName}</span></p>
+            </div>
+        </div>`;
+
+    const container = document.getElementById('toastContainer');
+    container.insertAdjacentHTML('beforeend', toastHTML);
+
+    setTimeout(() => {
+        if (container.children.length > 0) container.children[0].remove();
+    }, 6000);
+}
+
+// ==================== CODE CÒN LẠI ====================
+let allProducts = [];
+let allCategories = [];
+let currentCategoryName = null;
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function updateCartCount() {
+    const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const badge = document.getElementById('cartCount');
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+}
+
+function goToCart() { window.location.href = 'giohang.html'; }
+
+function handleAuthClick() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) window.location.href = 'auth.html';
+    else if (confirm("Bạn muốn đăng xuất?")) {
+        localStorage.removeItem('currentUser');
+        updateAuthButton();
+        alert("Đã đăng xuất!");
+    }
+}
+
+function updateAuthButton() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const btn = document.getElementById('authButton');
+    btn.innerHTML = currentUser ? `<i class="fa-solid fa-right-from-bracket text-2xl"></i>` : `<i class="fa-solid fa-user text-2xl"></i>`;
+}
+
+function showNotifications() {
+    alert("Hiện chưa có thông báo nào.");
+}
+
+function toggleCategoryDropdown() {
+    const dropdown = document.getElementById('categoryDropdown');
+    const chevron = document.getElementById('chevron');
+    dropdown.classList.toggle('show');
+    chevron.classList.toggle('rotate-180');
+}
+
+function renderCategoryDropdown() {
+    const dropdown = document.getElementById('categoryDropdown');
+    let html = `<a onclick="selectCategory(null)" class="block px-6 py-3 hover:bg-[#fce7f3]">Tất cả sản phẩm</a>`;
+    allCategories.forEach(cat => {
+        html += `<a onclick="selectCategory('${cat.name}')" class="block px-6 py-3 hover:bg-[#fce7f3]">${cat.name}</a>`;
+    });
+    dropdown.innerHTML = html;
+}
+
+function selectCategory(name) {
+    currentCategoryName = name;
+    document.getElementById('categoryDropdown').classList.remove('show');
+    document.getElementById('chevron').classList.remove('rotate-180');
+    document.getElementById('pageTitle').textContent = name ? name : "Tất cả sản phẩm";
+    filterProducts();
+}
+
+async function loadData() {
+    const grid = document.getElementById('productsGrid');
+    grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-500">Đang tải sản phẩm...</p>`;
+
+    try {
+        const { data: products } = await client.from('products').select('*').order('created_at', { ascending: false });
+        allProducts = products || [];
+
+        const { data: categories } = await client.from('categories').select('name').order('name');
+        allCategories = categories || [];
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCategory = urlParams.get('category');
+        if (urlCategory) {
+            currentCategoryName = urlCategory;
+            document.getElementById('pageTitle').textContent = urlCategory;
+        }
+
+        renderCategoryDropdown();
+        filterProducts();
+    } catch (e) {
+        console.error(e);
+        grid.innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Không thể tải dữ liệu</p>`;
+    }
+}
+
+function filterProducts() {
+    let filtered = allProducts;
+
+    if (currentCategoryName) {
+        filtered = currentCategoryName === 'Nội thất' 
+            ? filtered.filter(p => p.category && p.category.includes('Nội thất'))
+            : filtered.filter(p => p.category === currentCategoryName);
+    }
+
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (search) {
+        filtered = filtered.filter(p => 
+            p.name.toLowerCase().includes(search) || 
+            (p.desc && p.desc.toLowerCase().includes(search))
+        );
+    }
+
+    renderProducts(filtered);
+}
+
+function renderProducts(products) {
+    const grid = document.getElementById('productsGrid');
+    if (products.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-500">Không tìm thấy sản phẩm nào.</p>`;
+        return;
+    }
+
+    grid.innerHTML = products.map(p => {
+        const images = Array.isArray(p.images) && p.images.length ? p.images : [p.image || 'https://via.placeholder.com/300?text=No+Image'];
+        const firstImage = images[0];
+
+        let priceHTML = p.price_to && p.price_to > p.price 
+            ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
+            : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
+
+        return `
+            <div class="product-card bg-white rounded-3xl overflow-hidden shadow cursor-pointer" onclick="showProductDetail('${p.id}')">
+                <div class="product-image-container">
+                    <img src="${firstImage}" class="product-img" alt="${p.name}">
+                </div>
+                <div class="p-6">
+                    <h3 class="font-semibold text-base">${p.name}</h3>
+                    ${priceHTML}
+                    <p class="text-sm text-gray-500 mt-3">${p.category || ''}</p>
+                    <div class="mt-6 flex gap-3">
+                        <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
+                            Xem chi tiết
+                        </button>
+                        <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
+                            Thêm giỏ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function showProductDetail(id) {
+    window.location.href = `chitiet.html?id=${id}`;
+}
+
+function addToCart(id, name, price, image) {
+    const existing = cart.find(item => item.id === id);
+    if (existing) existing.quantity += 1;
+    else cart.push({ id, name, price, image, quantity: 1 });
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCount();
+    alert(`${name} đã được thêm vào giỏ hàng!`);
+}
+
+// Khởi tạo
+window.onload = () => {
+    loadData();
+    updateCartCount();
+    updateAuthButton();
+};
+</script>
+</body>
+</html>

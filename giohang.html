@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Giỏ hàng - THẾ GIỚI KIẾN TRÚC</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+        
+        /* Tối ưu mobile */
+        @layer base {
+            html { font-size: 16px; }
+            button, input, textarea {
+                min-height: 52px;
+            }
+        }
+        
+        .price-container {
+            margin-top: 8px;
+        }
+        .sale-price {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #f06292;
+        }
+    </style>
+</head>
+<body class="bg-[#fce7f3] min-h-screen">
+
+    <!-- NAVBAR -->
+    <nav class="bg-[#f06292] text-white sticky top-0 z-50 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <h1 onclick="window.location.href='index.html'" class="heading-font text-2xl md:text-3xl font-semibold cursor-pointer">
+                    THẾ GIỚI KIẾN TRÚC
+                </h1>
+            </div>
+
+            <a href="sanpham.html" class="flex items-center gap-2 text-white hover:text-pink-100">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span class="hidden sm:inline">Tiếp tục mua sắm</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+        <h1 class="heading-font text-4xl md:text-5xl font-bold text-[#f06292] text-center mb-10">Giỏ hàng của bạn</h1>
+
+        <div id="cartItems" class="space-y-6 mb-10"></div>
+
+        <div class="bg-white rounded-3xl p-8 shadow-xl">
+            <div class="flex justify-between items-center text-2xl font-semibold mb-10">
+                <span>Tổng tiền:</span>
+                <span id="totalPrice" class="text-[#f06292]"></span>
+            </div>
+
+            <h2 class="text-2xl font-semibold mb-6">Thông tin đặt hàng</h2>
+            
+            <div class="space-y-5">
+                <input id="customerName" type="text" placeholder="Họ và tên *" 
+                       class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <input id="customerPhone" type="tel" placeholder="Số điện thoại *" 
+                           class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base">
+                    <input id="customerAddress" type="text" placeholder="Địa chỉ nhận hàng *" 
+                           class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base">
+                </div>
+                <textarea id="customerNote" rows="3" placeholder="Ghi chú thêm (tùy chọn)" 
+                          class="w-full px-6 py-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none resize-y text-base"></textarea>
+            </div>
+
+            <button onclick="placeOrder()" 
+                    class="mt-10 w-full bg-[#f06292] hover:bg-[#ec407a] text-white py-6 rounded-3xl font-semibold text-xl transition active:scale-95">
+                TIẾP TỤC THANH TOÁN
+            </button>
+        </div>
+    </div>
+
+<script>
+// ==================== SUPABASE ====================
+const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO';
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function renderCart() {
+    const container = document.getElementById('cartItems');
+    let total = 0;
+
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-16">
+                <i class="fa-solid fa-shopping-cart text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">Giỏ hàng của bạn đang trống</p>
+                <a href="sanpham.html" class="mt-6 inline-block bg-[#f06292] text-white px-8 py-3 rounded-3xl font-medium">Quay lại mua sắm</a>
+            </div>`;
+        document.getElementById('totalPrice').textContent = '0 ₫';
+        return;
+    }
+
+    let html = '';
+    cart.forEach((item, index) => {
+        const itemTotal = item.price * (item.quantity || 1);
+        total += itemTotal;
+
+        let priceHTML = item.price_to 
+            ? `Từ ${Number(item.price).toLocaleString('vi-VN')} - ${Number(item.price_to).toLocaleString('vi-VN')} ₫`
+            : `${Number(item.price).toLocaleString('vi-VN')} ₫`;
+
+        html += `
+            <div class="bg-white rounded-3xl p-6 flex flex-col sm:flex-row gap-6 shadow">
+                <img src="${item.image}" class="w-full sm:w-28 h-28 object-cover rounded-2xl flex-shrink-0" alt="${item.name}">
+                <div class="flex-1">
+                    <h3 class="font-semibold text-lg leading-tight">${item.customName || item.name}</h3>
+                    <div class="price-container mt-3">
+                        <span class="sale-price">${priceHTML}</span>
+                    </div>
+                    ${item.size ? `<p class="text-sm text-gray-500 mt-2">Kích thước: ${item.size}</p>` : ''}
+                    <div class="flex items-center gap-4 mt-5">
+                        <button onclick="changeQuantity(${index}, -1)" class="w-10 h-10 border border-gray-300 rounded-2xl hover:bg-gray-100 text-xl font-medium">-</button>
+                        <span class="font-medium w-8 text-center">${item.quantity || 1}</span>
+                        <button onclick="changeQuantity(${index}, 1)" class="w-10 h-10 border border-gray-300 rounded-2xl hover:bg-gray-100 text-xl font-medium">+</button>
+                        <button onclick="removeItem(${index})" class="ml-auto text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
+                            <i class="fa-solid fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+                <div class="text-right font-semibold text-lg self-center">
+                    ${itemTotal.toLocaleString('vi-VN')} ₫
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    document.getElementById('totalPrice').innerHTML = `<span class="text-3xl font-bold">${total.toLocaleString('vi-VN')} ₫</span>`;
+}
+
+function changeQuantity(index, change) {
+    if (!cart[index]) return;
+    cart[index].quantity = (cart[index].quantity || 1) + change;
+    if (cart[index].quantity < 1) cart[index].quantity = 1;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    renderCart();
+}
+
+function removeItem(index) {
+    if (confirm("Xóa sản phẩm này khỏi giỏ hàng?")) {
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+}
+
+function placeOrder() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        if (confirm("Bạn cần đăng nhập để đặt hàng. Chuyển đến trang đăng nhập?")) {
+            window.location.href = 'auth.html';
+        }
+        return;
+    }
+
+    const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const address = document.getElementById('customerAddress').value.trim();
+    const note = document.getElementById('customerNote').value.trim();
+
+    if (!name || !phone || !address) {
+        alert("Vui lòng nhập đầy đủ thông tin!");
+        return;
+    }
+
+    localStorage.setItem('currentOrder', JSON.stringify({
+        total: cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
+        items: cart,
+        customer_name: name,
+        customer_phone: phone,
+        customer_address: address,
+        customer_note: note
+    }));
+
+    localStorage.removeItem('cart');
+    window.location.href = 'thanhtoan.html';
+}
+
+// Khởi động
+window.onload = () => {
+    renderCart();
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentUser) {
+        document.getElementById('customerName').value = currentUser.name || '';
+        document.getElementById('customerPhone').value = currentUser.phone || '';
+    }
+};
+</script>
+</body>
+</html>

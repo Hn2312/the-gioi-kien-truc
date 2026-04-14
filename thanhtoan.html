@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thanh toán - THẾ GIỚI KIẾN TRÚC</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        .heading-font { font-family: 'Playfair Display', sans-serif; }
+        
+        @layer base {
+            html { font-size: 16px; }
+            .payment-option { min-height: 72px; }
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            animation: toastSlideIn 0.4s ease forwards;
+        }
+        @keyframes toastSlideIn {
+            from { transform: translateY(80px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-[#fce7f3] min-h-screen">
+
+    <nav class="bg-[#f06292] text-white sticky top-0 z-50 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <h1 onclick="window.location.href='index.html'" class="heading-font text-2xl md:text-3xl font-semibold cursor-pointer">
+                THẾ GIỚI KIẾN TRÚC
+            </h1>
+            <a href="giohang.html" class="text-white hover:text-pink-100 flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Quay lại giỏ hàng</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto px-4 py-10">
+        <h1 class="heading-font text-4xl font-bold text-center mb-8">Thanh toán đơn hàng</h1>
+
+        <div id="orderSummary" class="bg-white rounded-3xl p-8 shadow-xl mb-10"></div>
+
+        <h2 class="text-2xl font-semibold mb-6">Chọn phương thức thanh toán</h2>
+
+        <div class="space-y-5">
+            <div onclick="selectPayment('cod')" class="payment-option flex items-center gap-5 bg-white p-6 rounded-3xl cursor-pointer border-2 border-transparent hover:border-[#f06292]">
+                <i class="fa-solid fa-hand-holding-dollar text-5xl text-green-600"></i>
+                <div class="flex-1">
+                    <p class="font-semibold text-lg">Thanh toán khi nhận hàng (COD)</p>
+                    <p class="text-sm text-gray-500">Thanh toán bằng tiền mặt khi nhận hàng</p>
+                </div>
+            </div>
+
+            <div onclick="selectPayment('bank')" class="payment-option flex items-center gap-5 bg-white p-6 rounded-3xl cursor-pointer border-2 border-transparent hover:border-[#f06292]">
+                <img src="/images/acb.png" alt="ACB" class="w-12 h-12 object-contain">
+                <div class="flex-1">
+                    <p class="font-semibold text-lg">Chuyển khoản ngân hàng ACB</p>
+                    <p class="text-sm text-gray-500">STK: 0987 042 718 - Lâm Lâm KTS</p>
+                </div>
+            </div>
+
+            <div onclick="selectPayment('zalopay')" class="payment-option flex items-center gap-5 bg-white p-6 rounded-3xl cursor-pointer border-2 border-transparent hover:border-[#f06292]">
+                <img src="qrzalopay.jpg" alt="ZaloPay" class="w-12 h-12 object-contain">
+                <div class="flex-1">
+                    <p class="font-semibold text-lg">Thanh toán bằng ZaloPay</p>
+                    <p class="text-sm text-gray-500">Quét mã QR ZaloPay cá nhân của bạn</p>
+                </div>
+            </div>
+
+            <div onclick="selectPayment('momo')" class="payment-option flex items-center gap-5 bg-white p-6 rounded-3xl cursor-pointer border-2 border-transparent hover:border-[#f06292]">
+                <img src="qrmomo.jpg" alt="MoMo" class="w-12 h-12 object-contain">
+                <div class="flex-1">
+                    <p class="font-semibold text-lg">Thanh toán bằng MoMo</p>
+                    <p class="text-sm text-gray-500">Quét mã QR MoMo cá nhân của bạn</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="qrSection" class="hidden mt-10 bg-white rounded-3xl p-8 shadow-xl text-center">
+            <h3 id="qrTitle" class="text-2xl font-semibold mb-6"></h3>
+            <div id="qrImage" class="mx-auto mb-6"></div>
+            <p id="qrDescription" class="text-sm text-gray-500"></p>
+        </div>
+
+        <button onclick="confirmPayment()" 
+                class="mt-10 w-full bg-[#f06292] hover:bg-[#ec407a] text-white py-6 rounded-3xl font-semibold text-xl transition active:scale-95">
+            XÁC NHẬN THANH TOÁN
+        </button>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 max-w-xs"></div>
+
+<script>
+// ==================== SUPABASE ====================
+const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO'; 
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ==================== REALTIME CHANNEL ====================
+const channel = supabaseClient.channel('new-purchase');
+
+// ==================== TOAST FUNCTION ====================
+function showPurchaseToast(customerName, productName, productImage) {
+    const toastHTML = `
+        <div class="toast-notification bg-white shadow-2xl border border-pink-200 rounded-3xl p-4 flex items-center gap-4 w-80">
+            <img src="${productImage}" class="w-14 h-14 object-cover rounded-2xl flex-shrink-0" alt="${productName}">
+            <div class="flex-1">
+                <p class="font-medium text-xs text-gray-500">Có người vừa mua</p>
+                <p class="font-semibold leading-tight">${customerName} vừa mua <span class="text-[#f06292]">${productName}</span></p>
+            </div>
+        </div>`;
+
+    const container = document.getElementById('toastContainer');
+    container.insertAdjacentHTML('beforeend', toastHTML);
+
+    setTimeout(() => {
+        if (container.children.length > 0) container.children[0].remove();
+    }, 6000);
+}
+
+// ==================== LISTEN REALTIME (để toast hiện ngay trên trang thanh toán) ====================
+channel.on('broadcast', { event: 'new-order' }, (payload) => {
+    const data = payload.payload || payload;
+    const { customerName, productName, productImage } = data;
+    if (customerName && productName) {
+        showPurchaseToast(customerName, productName, productImage);
+    }
+}).subscribe();
+
+let selectedMethod = '';
+let currentOrder = JSON.parse(localStorage.getItem('currentOrder')) || {};
+
+function renderOrderSummary() {
+    const container = document.getElementById('orderSummary');
+    if (!currentOrder.total) {
+        container.innerHTML = `<p class="text-center py-8 text-gray-500">Không tìm thấy đơn hàng</p>`;
+        return;
+    }
+    container.innerHTML = `
+        <div class="flex justify-between mb-4 text-lg">
+            <span>Mã đơn hàng</span>
+            <span class="font-mono font-semibold">#${currentOrder.id || 'TEMP-' + Date.now()}</span>
+        </div>
+        <div class="flex justify-between text-3xl font-bold text-[#f06292]">
+            <span>Tổng thanh toán</span>
+            <span>${currentOrder.total.toLocaleString('vi-VN')} ₫</span>
+        </div>
+    `;
+}
+
+function selectPayment(method) {
+    selectedMethod = method;
+    document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('border-[#f06292]'));
+    event.currentTarget.classList.add('border-[#f06292]');
+
+    const qrSection = document.getElementById('qrSection');
+    const title = document.getElementById('qrTitle');
+    const qrContainer = document.getElementById('qrImage');
+    const desc = document.getElementById('qrDescription');
+
+    qrSection.classList.remove('hidden');
+
+    if (method === 'cod') {
+        title.textContent = 'Thanh toán khi nhận hàng (COD)';
+        qrContainer.innerHTML = `<i class="fa-solid fa-hand-holding-dollar text-8xl text-green-600 mx-auto"></i>`;
+        desc.innerHTML = `Bạn sẽ thanh toán bằng <strong>tiền mặt</strong> khi nhận hàng.`;
+    } 
+    else if (method === 'bank') {
+        title.textContent = 'Chuyển khoản Ngân hàng ACB';
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=ACB+STK%3A0987042718+-+Lam+Lam+KTS" class="mx-auto rounded-2xl shadow-lg" alt="QR ACB">`;
+        desc.innerHTML = `STK: <strong>0987 042 718</strong><br>Chủ TK: Lâm Lâm KTS<br>Ngân hàng: ACB`;
+    } 
+    else if (method === 'zalopay') {
+        title.textContent = 'Thanh toán ZaloPay';
+        qrContainer.innerHTML = `<img src="qrzalopay.jpg" alt="QR ZaloPay" class="mx-auto rounded-3xl shadow-lg w-64 h-64 object-contain">`;
+        desc.innerHTML = `Quét mã QR ZaloPay cá nhân của bạn để thanh toán`;
+    } 
+    else if (method === 'momo') {
+        title.textContent = 'Thanh toán MoMo';
+        qrContainer.innerHTML = `<img src="qrmomo.jpg" alt="QR MoMo" class="mx-auto rounded-3xl shadow-lg w-64 h-64 object-contain">`;
+        desc.innerHTML = `Quét mã QR MoMo cá nhân của bạn để thanh toán`;
+    }
+}
+
+async function confirmPayment() {
+    if (!selectedMethod) {
+        alert("Vui lòng chọn phương thức thanh toán!");
+        return;
+    }
+
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        alert("Vui lòng đăng nhập để thanh toán!");
+        return;
+    }
+
+    try {
+        const orderData = {
+            user_id: currentUser.id,
+            customer_name: currentOrder.customer_name || currentUser.name || 'Khách hàng',
+            customer_phone: currentOrder.customer_phone || currentUser.phone || '',
+            customer_address: currentOrder.customer_address || '',
+            customer_note: currentOrder.customer_note || null,
+            items: currentOrder.items,
+            total: currentOrder.total,
+            status: 'pending',
+            payment_method: selectedMethod
+        };
+
+        const { error } = await supabaseClient.from('orders').insert([orderData]);
+        if (error) throw error;
+
+        // ==================== BROADCAST + HIỂN THỊ TOAST NGAY ====================
+        const firstItem = currentOrder.items && currentOrder.items.length > 0 ? currentOrder.items[0] : {};
+        const productName = firstItem.name || 'Sản phẩm';
+        const productImage = firstItem.image || 'https://via.placeholder.com/300?text=No+Image';
+
+        channel.send({
+            type: 'broadcast',
+            event: 'new-order',
+            payload: {
+                customerName: orderData.customer_name,
+                productName: productName,
+                productImage: productImage
+            }
+        });
+
+        // Hiển thị toast ngay trên trang thanh toán
+        showPurchaseToast(orderData.customer_name, productName, productImage);
+
+        alert("✅ Đơn hàng đã được tạo thành công!");
+        localStorage.removeItem('currentOrder');
+        window.location.href = 'lichsu.html';
+    } catch (error) {
+        console.error(error);
+        alert("❌ Lỗi khi tạo đơn hàng: " + error.message);
+    }
+}
+
+window.onload = renderOrderSummary;
+</script>
+</body>
+</html>
