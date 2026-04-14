@@ -1,0 +1,8 @@
+# Ignore unnecessary files
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# Ignore local config
+.env
