@@ -45,24 +45,23 @@
 
         /* ===== CHỈNH TÊN & GIÁ ===== */
         .product-title {
-            font-size: 1.65rem;        /* Laptop */
+            font-size: 1.65rem;
             line-height: 1.25;
         }
         
         .product-price {
-            font-size: 2.1rem;         /* To hơn rất rõ trên cả mobile & laptop */
+            font-size: 2.1rem;
             font-weight: 700;
-            color: #e11d48;            /* Màu đỏ hồng nổi bật */
+            color: #e11d48;
             line-height: 1.1;
         }
 
-        /* Mobile tối ưu thêm */
         @media (max-width: 640px) {
             .product-title {
-                font-size: 1.45rem;    /* Tên nhỏ gọn hơn trên điện thoại */
+                font-size: 1.45rem;
             }
             .product-price {
-                font-size: 2.25rem;    /* Giá càng to hơn trên mobile */
+                font-size: 2.25rem;
             }
         }
     </style>
@@ -167,7 +166,7 @@ async function loadProductDetail() {
 
     const html = `
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 p-6 md:p-10">
-            <!-- CỘT TRÁI: ẢNH -->
+            <!-- CỘT TRÁI: ẢNH + MÔ TẢ (chỉ hiển thị trên desktop) -->
             <div class="space-y-6">
                 <div>
                     <img id="mainImage" src="${currentImages[0]}" class="w-full rounded-3xl shadow-xl main-image" alt="${p.name}">
@@ -183,13 +182,14 @@ async function loadProductDetail() {
                     </div>` : ''}
                 </div>
 
-                <div class="border border-gray-200 rounded-3xl p-6">
+                <!-- Mô tả chỉ hiển thị trên laptop -->
+                <div class="hidden lg:block border border-gray-200 rounded-3xl p-6">
                     <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
                     <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
                 </div>
             </div>
 
-            <!-- CỘT PHẢI -->
+            <!-- CỘT PHẢI: Thông tin + controls -->
             <div class="space-y-8">
                 <div>
                     <h1 class="heading-font product-title font-bold text-gray-800">${p.name}</h1>
@@ -198,8 +198,10 @@ async function loadProductDetail() {
                 </div>
 
                 ${!isFurniture ? `
+                <!-- Chọn mức giá -->
                 <div id="priceSelectionSection"></div>
 
+                <!-- Kích thước -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Kích thước (m)</label>
                     ${isAluminumGlass ? `
@@ -243,6 +245,7 @@ async function loadProductDetail() {
                 </div>
                 ` : ''}
 
+                <!-- Nút Xem mẫu thực tế -->
                 <button onclick="showRealModal()" class="w-full bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
                     <i class="fa-solid fa-camera"></i> 📸 Xem mẫu thực tế lắp đặt
                 </button>
@@ -262,6 +265,12 @@ async function loadProductDetail() {
                     <button onclick="addCustomToCart()" class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-5 rounded-3xl font-semibold text-lg">🛒 Thêm vào giỏ hàng</button>
                     <button onclick="window.history.back()" class="flex-1 border border-gray-300 hover:bg-gray-50 py-5 rounded-3xl font-semibold text-lg">← Quay lại</button>
                 </div>
+
+                <!-- Mô tả sản phẩm - Chỉ hiển thị trên mobile, đặt ở dưới cùng -->
+                <div class="lg:hidden border border-gray-200 rounded-3xl p-6 mt-8">
+                    <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
+                    <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
+                </div>
             </div>
         </div>
     `;
@@ -280,6 +289,7 @@ async function loadProductDetail() {
     updateCartCount();
 }
 
+// ==================== Các hàm còn lại giữ nguyên ====================
 function renderPriceOptions() {
     const section = document.getElementById('priceSelectionSection');
     let html = `<label class="block text-sm font-medium text-gray-700 mb-3">Chọn mức giá</label><div class="flex flex-wrap gap-3">`;
@@ -349,14 +359,12 @@ function calculatePrice() {
     if (!currentProduct) return;
 
     let estimatedPrice = 0;
-
     if (isAluminumGlass) {
         const widthM = parseFloat(document.getElementById('width').value) || 0;
         const heightM = parseFloat(document.getElementById('height').value) || 0;
         const area = widthM * heightM;
         estimatedPrice = Math.round(area * selectedPrice);
-    } 
-    else if (!isFurniture) {
+    } else if (!isFurniture) {
         const widthM = parseFloat(document.getElementById('width').value) || 0;
         const heightM = parseFloat(document.getElementById('height').value) || 0;
         const area = widthM * heightM;
