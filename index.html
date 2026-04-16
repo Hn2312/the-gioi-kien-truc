@@ -512,31 +512,32 @@
         }
 
         // ==================== LƯỢT TRUY CẬP THẬT TỪ SUPABASE ====================
-        async function updateVisitCount() {
-            const today = new Date().toISOString().split('T')[0];
+        // ==================== LƯỢT TRUY CẬP THẬT TỪ SUPABASE ====================
+async function updateVisitCount() {
+    const today = new Date().toISOString().split('T')[0];   // YYYY-MM-DD
 
-            try {
-                // Tăng lượt truy cập (upsert)
-                await client
-                    .from('visits')
-                    .upsert({ date: today }, { onConflict: 'date' });
+    try {
+        // Gọi hàm increment_visit để tăng count
+        await client.rpc('increment_visit', { p_date: today });
 
-                // Lấy số lượt hôm nay
-                const { data, error } = await client
-                    .from('visits')
-                    .select('count')
-                    .eq('date', today)
-                    .single();
+        // Lấy số lượt hiện tại
+        const { data, error } = await client
+            .from('visits')
+            .select('count')
+            .eq('date', today)
+            .single();
 
-                if (data && !error) {
-                    document.getElementById('visitCount').textContent = 
-                        Number(data.count).toLocaleString('vi-VN');
-                }
-            } catch (err) {
-                console.error("Lỗi cập nhật lượt truy cập:", err);
-                document.getElementById('visitCount').textContent = "1,284";
-            }
+        if (data && !error) {
+            document.getElementById('visitCount').textContent = 
+                Number(data.count).toLocaleString('vi-VN');
+        } else {
+            document.getElementById('visitCount').textContent = "1";
         }
+    } catch (err) {
+        console.error("Lỗi cập nhật lượt truy cập:", err);
+        document.getElementById('visitCount').textContent = "1,284"; // fallback
+    }
+}
 
         // ==================== LOAD & RENDER ====================
         async function loadFeaturedData() {
@@ -748,11 +749,11 @@
 
         // Khởi tạo
         window.onload = () => {
-            loadFeaturedData();
-            updateCartCount();
-            updateAuthButton();
-            updateVisitCount();     // ← Lượt truy cập thật
-        };
+    loadFeaturedData();
+    updateCartCount();
+    updateAuthButton();
+    updateVisitCount();   // ← Phải có dòng này
+};
     </script>
 </body>
 </html>
