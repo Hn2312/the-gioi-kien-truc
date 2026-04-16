@@ -37,6 +37,7 @@
 
         .product-card { 
             transition: all 0.4s ease; 
+            height: 100%;
         }
         .product-card:hover { 
             transform: translateY(-8px); 
@@ -44,13 +45,13 @@
         }
         .product-img {
             width: 100%;
-            height: 220px;
+            height: 200px;
             object-fit: cover;
             transition: transform 0.6s ease;
         }
         .product-card:hover .product-img { transform: scale(1.08); }
 
-        /* Badge ĐÃ BÁN sắc nét */
+        /* Badge ĐÃ BÁN */
         .sold-badge {
             background: linear-gradient(90deg, #fce7f3, #fdf2f8);
             color: #f06292;
@@ -433,7 +434,7 @@
         let currentCategory = null;
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-        // ==================== FAKE TOAST (đồng bộ với sanpham.html) ====================
+        // ==================== FAKE TOAST ====================
         const fakeCustomers = ["Anh Minh", "Chị Lan", "Anh Tuấn", "Chị Hoa", "Anh Huy", "Chị Mai", "Anh Khánh", "Chị Hương"];
 
         function getRandomFakeToast() {
@@ -552,34 +553,37 @@
 
                 const sold = Math.floor(Math.random() * 135) + 18;
                 const rating = (4.4 + Math.random() * 0.6).toFixed(1);
+                const reviewCount = Math.floor(Math.random() * 45) + 8;
 
                 let priceHTML = p.price_to && p.price_to > p.price 
                     ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
                     : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
 
                 return `
-                    <div class="product-card bg-white rounded-3xl overflow-hidden shadow cursor-pointer" onclick="showProductDetail('${p.id}')">
+                    <div class="product-card bg-white rounded-3xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
                         <div class="product-image-container">
                             <img src="${firstImage}" class="product-img" alt="${p.name}">
                         </div>
-                        <div class="p-6">
-                            <h3 class="font-semibold text-base line-clamp-2">${p.name}</h3>
+                        <div class="p-5 flex-1 flex flex-col">
+                            <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
                             ${priceHTML}
                             
-                            <div class="flex items-center justify-between mt-4">
+                            <div class="flex items-center justify-between mt-4 text-sm">
                                 <div class="flex items-center gap-1">
-                                    <span class="text-yellow-400 text-lg">★</span>
+                                    <span class="text-yellow-400 text-xl">★</span>
                                     <span class="font-medium">${rating}</span>
+                                    <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
                                 </div>
-                                <div class="sold-badge">
-                                    <i class="fa-solid fa-fire"></i>
+                                <!-- Ẩn "Đã bán" trên mobile -->
+                                <div class="sold-badge hidden md:flex">
+                                    <i class="fa-solid fa-fire text-sm"></i>
                                     Đã bán ${sold}
                                 </div>
                             </div>
 
                             <p class="text-sm text-gray-500 mt-3">${p.category || ''}</p>
                             
-                            <div class="mt-6 flex gap-3">
+                            <div class="mt-auto pt-6 flex gap-3">
                                 <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
                                         class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
                                     Xem chi tiết
