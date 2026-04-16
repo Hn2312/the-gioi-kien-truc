@@ -13,30 +13,36 @@
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
         .heading-font { font-family: 'Playfair Display', sans-serif; }
 
-        /* Tối ưu mobile */
-        @layer base {
-            html { font-size: 16px; }
-            button, select {
-                min-height: 52px;
-            }
+        .order-card {
+            transition: all 0.3s ease;
+        }
+        .order-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(240 98 146 / 0.15);
         }
 
-        #invoiceModal { animation: fadeIn 0.3s ease; }
-        
-        @media print {
-            body * { visibility: hidden; }
-            #invoiceModal, #invoiceModal * { visibility: visible; }
-            #invoiceModal { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; }
-            .no-print { display: none !important; }
+        .color-dot {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 8px;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        @layer base {
+            html { font-size: 16px; }
         }
     </style>
 </head>
 <body class="bg-[#fce7f3] min-h-screen">
 
 <div class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="heading-font text-4xl font-bold">📋 Quản lý đơn hàng</h1>
-        <a href="admin.html" class="bg-white px-6 py-3 rounded-3xl flex items-center gap-2 hover:bg-gray-100 text-sm md:text-base">
+    <div class="flex justify-between items-center mb-10">
+        <h1 class="heading-font text-4xl font-bold text-gray-800">📋 Quản lý đơn hàng</h1>
+        <a href="admin.html" class="bg-white px-6 py-3 rounded-3xl flex items-center gap-2 hover:bg-gray-100">
             ← Quay lại Admin
         </a>
     </div>
@@ -51,13 +57,11 @@
             <h2 class="heading-font text-3xl text-[#f06292]">HÓA ĐƠN BÁN HÀNG</h2>
             <div class="flex gap-3">
                 <button onclick="printInvoice()" 
-                        class="no-print flex items-center gap-2 bg-[#f06292] text-white px-6 py-2 rounded-2xl hover:bg-[#ec407a]">
+                        class="flex items-center gap-2 bg-[#f06292] text-white px-6 py-2 rounded-2xl hover:bg-[#ec407a]">
                     <i class="fa-solid fa-print"></i> In hóa đơn
                 </button>
                 <button onclick="closeInvoiceModal()" 
-                        class="no-print text-gray-500 hover:text-gray-700">
-                    ✕ Đóng
-                </button>
+                        class="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
             </div>
         </div>
 
@@ -81,6 +85,19 @@ const paymentConfig = {
 
 let currentOrderForPrint = null;
 
+// Helper lấy màu hex
+function getColorHex(colorName) {
+    const map = {
+        "Trắng": "#f8fafc",
+        "Đen": "#1f2937",
+        "Vân gỗ óc chó": "#5c4033",
+        "Vân gỗ nâu": "#8d5524",
+        "Xám": "#64748b",
+        "Be": "#d2b48c"
+    };
+    return map[colorName] || "#e5e7eb";
+}
+
 // ==================== TẢI DANH SÁCH ĐƠN HÀNG ====================
 async function loadOrders() {
     const container = document.getElementById('orderList');
@@ -92,7 +109,8 @@ async function loadOrders() {
         .order('created_at', { ascending: false });
 
     if (error || !data) {
-        container.innerHTML = `<p class="text-red-500 text-center py-12">Lỗi tải dữ liệu: ${error?.message || ''}</p>`;
+        container.innerHTML = `<p class="text-red-500 text-center py-12">Lỗi tải dữ liệu</p>`;
+        console.error(error);
         return;
     }
 
@@ -100,44 +118,63 @@ async function loadOrders() {
     data.forEach(order => {
         const pay = paymentConfig[order.payment_method] || { icon: 'fa-question', text: order.payment_method || 'Không rõ' };
 
+        // Hiển thị items với màu sắc
+        const itemsHtml = order.items.map(item => `
+            <div class="flex justify-between py-2 text-sm">
+                <div class="flex items-center">
+                    ${item.color ? `<span class="color-dot" style="background-color: ${getColorHex(item.color)}"></span>` : ''}
+                    <span>${item.name}</span>
+                    ${item.color ? `<span class="ml-2 text-pink-500">(${item.color})</span>` : ''}
+                </div>
+                <span>${(item.price * (item.quantity || 1)).toLocaleString('vi-VN')} ₫</span>
+            </div>
+        `).join('');
+
         html += `
-            <div class="bg-white rounded-3xl p-6 shadow">
-                <div class="flex justify-between items-start mb-4">
+            <div class="order-card bg-white rounded-3xl p-7 shadow">
+                <div class="flex justify-between mb-6">
                     <div>
-                        <p class="font-semibold text-lg">Đơn #${order.id}</p>
+                        <p class="font-semibold text-xl">Đơn #${order.id}</p>
                         <p class="text-xs text-gray-500">${new Date(order.created_at).toLocaleString('vi-VN')}</p>
                     </div>
                     <div class="text-right">
-                        <span class="px-5 py-1 text-xs rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-700' : order.status === 'shipping' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}">
-                            ${order.status}
+                        <span class="px-5 py-1 text-xs rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
+                            order.status === 'shipping' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}">
+                            ${order.status || 'Chờ xử lý'}
                         </span>
-                        <p class="mt-2 text-sm flex items-center justify-end gap-1">
-                            <i class="fa-solid ${pay.icon}"></i> ${pay.text}
-                        </p>
                     </div>
                 </div>
 
-                <div class="text-sm space-y-2 mb-6">
-                    <p><strong>Khách hàng:</strong> ${order.users?.name || order.customer_name || 'Không rõ'}</p>
-                    <p><strong>SĐT:</strong> ${order.users?.phone || order.customer_phone || 'Không rõ'}</p>
-                    <p><strong>Địa chỉ:</strong> ${order.customer_address}</p>
+                <div class="border-t border-b py-5 mb-6">
+                    ${itemsHtml}
                 </div>
 
-                <div class="flex gap-3">
+                <div class="flex justify-between items-center text-sm">
+                    <div>
+                        <strong>Khách hàng:</strong> ${order.users?.name || order.customer_name || 'Không rõ'}<br>
+                        <strong>SĐT:</strong> ${order.users?.phone || order.customer_phone || 'Không rõ'}
+                    </div>
+                    <div class="font-bold text-2xl text-[#f06292]">
+                        ${Number(order.total).toLocaleString('vi-VN')} ₫
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-3">
                     <button onclick="viewInvoice('${order.id}')" 
-                            class="flex-1 bg-[#f06292] text-white py-3 rounded-2xl font-medium hover:bg-[#ec407a]">
+                            class="flex-1 bg-[#f06292] text-white py-3.5 rounded-2xl font-medium hover:bg-[#ec407a]">
                         📄 Xem hóa đơn
                     </button>
                     <button onclick="printInvoiceDirect('${order.id}')" 
-                            class="flex-1 border border-[#f06292] text-[#f06292] py-3 rounded-2xl font-medium hover:bg-pink-50">
-                        🖨️ In hóa đơn
+                            class="flex-1 border border-[#f06292] text-[#f06292] py-3.5 rounded-2xl font-medium hover:bg-pink-50">
+                        🖨️ In PDF
                     </button>
                 </div>
 
                 <div class="mt-6">
-                    <select onchange="updateOrderStatus('${order.id}', this.value)" class="w-full p-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-[#f06292]">
+                    <select onchange="updateOrderStatus('${order.id}', this.value)" 
+                            class="w-full p-4 border border-gray-300 rounded-2xl focus:outline-none focus:border-[#f06292]">
                         <option value="pending" ${order.status==='pending'?'selected':''}>Chờ xử lý</option>
-                        <option value="confirmed" ${order.status==='confirmed'?'selected':''}>Đã nhận</option>
+                        <option value="confirmed" ${order.status==='confirmed'?'selected':''}>Đã xác nhận</option>
                         <option value="preparing" ${order.status==='preparing'?'selected':''}>Đang chuẩn bị</option>
                         <option value="shipping" ${order.status==='shipping'?'selected':''}>Đang giao hàng</option>
                         <option value="delivered" ${order.status==='delivered'?'selected':''}>Đã giao thành công</option>
@@ -164,22 +201,25 @@ async function viewInvoice(orderId) {
 
     currentOrderForPrint = order;
 
-    const pay = paymentConfig[order.payment_method] || { icon: 'fa-question', text: order.payment_method || 'Không rõ' };
+    const pay = paymentConfig[order.payment_method] || { text: 'Không rõ' };
 
     let itemsHTML = order.items.map(item => `
         <tr class="border-b">
-            <td class="py-3">${item.customName || item.name}</td>
-            <td class="py-3 text-center">${item.quantity || 1}</td>
-            <td class="py-3 text-right">${Number(item.price).toLocaleString('vi-VN')} ₫</td>
-            <td class="py-3 text-right font-medium">${(item.price * (item.quantity || 1)).toLocaleString('vi-VN')} ₫</td>
+            <td class="py-4">
+                ${item.name}
+                ${item.color ? `<span class="ml-2 text-pink-500">(${item.color})</span>` : ''}
+            </td>
+            <td class="py-4 text-center">${item.quantity || 1}</td>
+            <td class="py-4 text-right">${Number(item.price).toLocaleString('vi-VN')} ₫</td>
+            <td class="py-4 text-right font-semibold">${(item.price * (item.quantity || 1)).toLocaleString('vi-VN')} ₫</td>
         </tr>
     `).join('');
 
     const modalContent = `
-        <div class="max-w-3xl mx-auto bg-white p-8">
-            <div class="flex justify-between mb-8">
+        <div class="max-w-3xl mx-auto p-8">
+            <div class="flex justify-between mb-10">
                 <div>
-                    <h1 class="heading-font text-3xl">THẾ GIỚI KIẾN TRÚC</h1>
+                    <h1 class="heading-font text-4xl text-[#f06292]">THẾ GIỚI KIẾN TRÚC</h1>
                     <p class="text-sm text-gray-500">85 Trần Thị Hè, Quận 12, TP.HCM</p>
                 </div>
                 <div class="text-right">
@@ -189,51 +229,42 @@ async function viewInvoice(orderId) {
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-2 gap-10 mb-10">
                 <div>
                     <p class="font-medium">Khách hàng</p>
                     <p>${order.users?.name || order.customer_name}</p>
                     <p>${order.users?.phone || order.customer_phone}</p>
-                    <p class="text-sm text-gray-500">${order.customer_address}</p>
                 </div>
                 <div class="text-right">
                     <p class="font-medium">Phương thức thanh toán</p>
-                    <p><i class="fa-solid ${pay.icon}"></i> ${pay.text}</p>
+                    <p>${pay.text}</p>
                 </div>
             </div>
 
-            <table class="w-full text-sm mb-8">
+            <table class="w-full text-sm mb-10">
                 <thead>
-                    <tr class="border-b-2 border-gray-800">
-                        <th class="text-left py-3 font-medium">Sản phẩm</th>
-                        <th class="text-center py-3 font-medium">SL</th>
-                        <th class="text-right py-3 font-medium">Đơn giá</th>
-                        <th class="text-right py-3 font-medium">Thành tiền</th>
+                    <tr class="border-b-2 border-gray-800 text-left">
+                        <th class="py-3 font-medium">Sản phẩm</th>
+                        <th class="py-3 text-center font-medium">SL</th>
+                        <th class="py-3 text-right font-medium">Đơn giá</th>
+                        <th class="py-3 text-right font-medium">Thành tiền</th>
                     </tr>
                 </thead>
                 <tbody>${itemsHTML}</tbody>
             </table>
 
-            <div class="flex justify-end text-2xl font-semibold">
-                Tổng cộng: <span class="ml-6 text-[#f06292]">${Number(order.total).toLocaleString('vi-VN')} ₫</span>
-            </div>
-
-            <div class="text-center text-gray-500 text-xs mt-16">
-                Cảm ơn quý khách đã tin tưởng THẾ GIỚI KIẾN TRÚC!<br>
-                Hóa đơn này được xuất tự động từ hệ thống.
+            <div class="flex justify-end text-2xl font-bold">
+                Tổng cộng: <span class="ml-8 text-[#f06292]">${Number(order.total).toLocaleString('vi-VN')} ₫</span>
             </div>
         </div>
     `;
 
     document.getElementById('invoiceContent').innerHTML = modalContent;
     document.getElementById('invoiceModal').classList.remove('hidden');
-    document.getElementById('invoiceModal').classList.add('flex');
 }
 
 function closeInvoiceModal() {
-    const modal = document.getElementById('invoiceModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    document.getElementById('invoiceModal').classList.add('hidden');
 }
 
 function printInvoice() {
@@ -249,7 +280,7 @@ function printInvoiceDirect(orderId) {
 async function updateOrderStatus(orderId, status) {
     const { error } = await supabaseClient
         .from('orders')
-        .update({ status })
+        .update({ status: status })
         .eq('id', orderId);
 
     if (error) {

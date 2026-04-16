@@ -43,6 +43,21 @@
             transform: translateY(-8px); 
             box-shadow: 0 20px 25px -5px rgb(240 98 146 / 0.15); 
         }
+        /* Badge Danh mục trên ảnh sản phẩm nổi bật */
+.category-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(240, 98, 146, 0.95);
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 10;
+    backdrop-filter: blur(4px);
+}
         .product-img {
             width: 100%;
             height: 200px;
@@ -208,7 +223,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <a href="sanpham.html?category=Nội thất" class="block bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-xl hover:-translate-y-3 transition-all group">
+                <a href="sanpham.html?category=Nội thất" class="block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-xl hover:-translate-y-3 transition-all group">
                     <div class="h-64 md:h-80 overflow-hidden">
                         <img src="/images/noithatcaocap.jpg" alt="Nội thất cao cấp" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
                     </div>
@@ -222,7 +237,7 @@
                     </div>
                 </a>
 
-                <a href="sanpham.html?category=Nhôm kính" class="block bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-xl hover:-translate-y-3 transition-all group">
+                <a href="sanpham.html?category=Nhôm kính" class="block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-xl hover:-translate-y-3 transition-all group">
                     <div class="h-64 md:h-80 overflow-hidden">
                         <img src="/images/nhomkinhcaocap.webp" alt="Nhôm kính cao cấp" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
                     </div>
@@ -236,7 +251,7 @@
                     </div>
                 </a>
 
-                <a href="sanpham.html?category=Xây nhà trọn gói" class="block bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-xl hover:-translate-y-3 transition-all group">
+                <a href="sanpham.html?category=Xây nhà trọn gói" class="block bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-xl hover:-translate-y-3 transition-all group">
                     <div class="h-64 md:h-80 overflow-hidden">
                         <img src="/images/xaynhatrongoi.webp" alt="Xây nhà trọn gói" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
                     </div>
@@ -542,62 +557,68 @@
         }
 
         function renderFeaturedProducts(products) {
-            const grid = document.getElementById('featuredGrid');
-            if (products.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">Không tìm thấy sản phẩm nào.</p>`;
-                return;
-            }
+    const grid = document.getElementById('featuredGrid');
+    if (products.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">Không tìm thấy sản phẩm nào.</p>`;
+        return;
+    }
 
-            grid.innerHTML = products.map(p => {
-                const firstImage = (Array.isArray(p.images) && p.images.length ? p.images[0] : p.image) || 'https://via.placeholder.com/300?text=No+Image';
+    grid.innerHTML = products.map(p => {
+        const firstImage = (Array.isArray(p.images) && p.images.length ? p.images[0] : p.image) || 'https://via.placeholder.com/300?text=No+Image';
 
-                const sold = Math.floor(Math.random() * 135) + 18;
-                const rating = (4.4 + Math.random() * 0.6).toFixed(1);
-                const reviewCount = Math.floor(Math.random() * 45) + 8;
+        const sold = Math.floor(Math.random() * 135) + 18;
+        const rating = (4.4 + Math.random() * 0.6).toFixed(1);
+        const reviewCount = Math.floor(Math.random() * 45) + 8;
 
-                let priceHTML = p.price_to && p.price_to > p.price 
-                    ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
-                    : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
+        let priceHTML = p.price_to && p.price_to > p.price 
+            ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
+            : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
 
-                return `
-                    <div class="product-card bg-white rounded-3xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
-                        <div class="product-image-container">
-                            <img src="${firstImage}" class="product-img" alt="${p.name}">
+        return `
+            <div class="product-card bg-white rounded-2xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
+                <!-- Phần ảnh + badge danh mục -->
+                <div class="product-image-container relative">
+                    <img src="${firstImage}" class="product-img rounded-2xl" alt="${p.name}">
+                    
+                    <!-- Badge danh mục nằm trên góc trái ảnh -->
+                    ${p.category ? `
+                    <div class="category-badge absolute top-3 left-3 bg-[#f06292] text-white text-xs font-semibold px-3 py-1 rounded-2xl shadow-md z-10">
+                        ${p.category}
+                    </div>` : ''}
+                </div>
+
+                <div class="p-5 flex-1 flex flex-col">
+                    <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
+                    ${priceHTML}
+                    
+                    <div class="flex items-center justify-between mt-4 text-sm">
+                        <div class="flex items-center gap-1">
+                            <span class="text-yellow-400 text-xl">★</span>
+                            <span class="font-medium">${rating}</span>
+                            <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
                         </div>
-                        <div class="p-5 flex-1 flex flex-col">
-                            <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
-                            ${priceHTML}
-                            
-                            <div class="flex items-center justify-between mt-4 text-sm">
-                                <div class="flex items-center gap-1">
-                                    <span class="text-yellow-400 text-xl">★</span>
-                                    <span class="font-medium">${rating}</span>
-                                    <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
-                                </div>
-                                <!-- Ẩn "Đã bán" trên mobile -->
-                                <div class="sold-badge hidden md:flex">
-                                    <i class="fa-solid fa-fire text-sm"></i>
-                                    Đã bán ${sold}
-                                </div>
-                            </div>
-
-                            <p class="text-sm text-gray-500 mt-3">${p.category || ''}</p>
-                            
-                            <div class="mt-auto pt-6 flex gap-3">
-                                <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
-                                        class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
-                                    Xem chi tiết
-                                </button>
-                                <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" 
-                                        class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
-                                    Thêm giỏ
-                                </button>
-                            </div>
+                        <!-- Ẩn "Đã bán" trên mobile -->
+                        <div class="sold-badge hidden md:flex">
+                            <i class="fa-solid fa-fire text-sm"></i>
+                            Đã bán ${sold}
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
+
+                    <div class="mt-auto pt-6 flex gap-3">
+                        <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
+                                class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
+                            Xem chi tiết
+                        </button>
+                        <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" 
+                                class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
+                            Thêm giỏ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
 
         function showProductDetail(id) {
             window.location.href = `chitiet.html?id=${id}`;

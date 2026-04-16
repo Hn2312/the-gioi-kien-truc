@@ -21,6 +21,8 @@
         .product-card { 
             transition: all 0.4s ease; 
             height: 100%;
+            position: relative;
+            overflow: hidden;
         }
         .product-card:hover { 
             transform: translateY(-8px); 
@@ -33,11 +35,27 @@
         }
         .product-img {
             width: 100%;
-            height: 205px;           /* Tăng nhẹ để cân đối hơn */
+            height: 205px;
             object-fit: cover;
             transition: transform 0.6s ease;
         }
         .product-card:hover .product-img { transform: scale(1.08); }
+
+        /* Badge Danh mục nằm trên góc trái ảnh */
+        .category-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(240, 98, 146, 0.95);
+            color: white;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
 
         /* Badge ĐÃ BÁN */
         .sold-badge {
@@ -324,9 +342,14 @@ function renderProducts(products) {
             : `<div class="text-[#f06292] font-bold text-lg">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
 
         return `
-            <div class="product-card bg-white rounded-3xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
+            <div class="product-card bg-white rounded-lg overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
                 <div class="product-image-container">
-                    <img src="${firstImage}" class="product-img" alt="${p.name}">
+                    <img src="${firstImage}" class="product-img rounded-lg" alt="${p.name}">
+                    <!-- Badge danh mục nằm trên góc trái ảnh -->
+                    ${p.category ? `
+                    <div class="category-badge">
+                        ${p.category}
+                    </div>` : ''}
                 </div>
                 <div class="p-5 flex-1 flex flex-col">
                     <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
@@ -338,15 +361,12 @@ function renderProducts(products) {
                             <span class="font-medium">${rating}</span>
                             <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
                         </div>
-                        <!-- Hiển thị "Đã bán" chỉ trên desktop -->
                         <div class="sold-badge hidden md:flex">
                             <i class="fa-solid fa-fire text-sm"></i>
                             Đã bán ${sold}
                         </div>
                     </div>
 
-                    <p class="text-sm text-gray-500 mt-3">${p.category || ''}</p>
-                    
                     <div class="mt-auto pt-6 flex gap-3">
                         <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
                                 class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
