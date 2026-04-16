@@ -199,11 +199,10 @@ async function loadProductDetail() {
 
     const html = `
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 p-6 md:p-10 bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <!-- CỘT TRÁI: ẢNH -->
+            <!-- CỘT TRÁI: ẢNH + MÔ TẢ LAPTOP -->
             <div class="space-y-6">
                 <div class="product-image-container relative">
                     <img id="mainImage" src="${currentImages[0]}" class="w-full rounded-2xl shadow-xl main-image" alt="${p.name}">
-                    <!-- Badge danh mục nằm trên góc trái ảnh -->
                     ${p.category ? `
                     <div class="category-badge">
                         ${p.category}
@@ -213,7 +212,7 @@ async function loadProductDetail() {
                 <div class="flex gap-3 mt-6 overflow-x-auto pb-3 snap-x" id="thumbnails">
                     ${currentImages.map((img, idx) => `
                         <img onclick="changeMainImage(${idx})" src="${img}" 
-                             class="thumbnail w-20 h-20 object-cover rounded-xlg cursor-pointer flex-shrink-0 snap-center ${idx === 0 ? 'active' : ''}">
+                             class="thumbnail w-20 h-20 object-cover rounded-2xl cursor-pointer flex-shrink-0 snap-center ${idx === 0 ? 'active' : ''}">
                     `).join('')}
                 </div>
 
@@ -222,6 +221,12 @@ async function loadProductDetail() {
                     <button onclick="prevImage()" class="px-6 py-4 bg-gray-100 hover:bg-gray-200 rounded-3xl text-xl"><i class="fa-solid fa-chevron-left"></i></button>
                     <button onclick="nextImage()" class="px-6 py-4 bg-gray-100 hover:bg-gray-200 rounded-3xl text-xl"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>` : ''}
+
+                <!-- Mô tả sản phẩm - Chỉ hiển thị trên laptop -->
+                <div class="hidden lg:block border border-gray-200 rounded-3xl p-6">
+                    <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
+                    <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
+                </div>
             </div>
 
             <!-- CỘT PHẢI: Thông tin -->
@@ -229,14 +234,12 @@ async function loadProductDetail() {
                 <div>
                     <h1 class="heading-font product-title font-bold text-gray-800">${p.name}</h1>
                     <div class="mt-5">${priceHTML}</div>
-                    
                 </div>
 
                 ${!isFurniture ? `
-                <!-- Chọn mức giá -->
+                <!-- Chọn mức giá, kích thước, màu... giữ nguyên -->
                 <div id="priceSelectionSection"></div>
 
-                <!-- Kích thước -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Kích thước (m)</label>
                     ${isAluminumGlass ? `
@@ -279,7 +282,6 @@ async function loadProductDetail() {
                     <p class="text-xs text-gray-500 mt-2">Giá có thể thay đổi tùy chất liệu và thi công thực tế</p>
                 </div>
                 ` : `
-                <!-- Chọn màu cho Nội thất -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Chọn màu sắc</label>
                     <div class="flex flex-wrap gap-4" id="colorPicker">
@@ -292,7 +294,6 @@ async function loadProductDetail() {
                     </div>
                 </div>`}
 
-                <!-- Nút Xem mẫu thực tế -->
                 <button onclick="showRealModal()" class="w-full bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
                     <i class="fa-solid fa-camera"></i> 📸 Xem mẫu thực tế lắp đặt
                 </button>
@@ -319,7 +320,7 @@ async function loadProductDetail() {
                     </button>
                 </div>
 
-                <!-- Mô tả - Chỉ hiển thị trên mobile -->
+                <!-- Mô tả sản phẩm - Chỉ hiển thị trên mobile -->
                 <div class="lg:hidden border border-gray-200 rounded-3xl p-6 mt-8">
                     <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
                     <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
