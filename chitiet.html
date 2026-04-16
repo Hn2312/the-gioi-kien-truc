@@ -231,9 +231,15 @@ async function loadProductDetail() {
 
             <!-- CỘT PHẢI: Thông tin -->
             <div class="space-y-8">
-                <div>
+                                <div>
                     <h1 class="heading-font product-title font-bold text-gray-800">${p.name}</h1>
-                    <div class="mt-5">${priceHTML}</div>
+                    <div class="mt-5 flex items-center gap-3">
+                        ${priceHTML}
+                        <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-sm font-medium px-3 py-1 rounded-2xl">
+                            <i class="fa-solid fa-circle-check"></i>
+                            Còn hàng
+                        </span>
+                    </div>
                 </div>
 
                 ${!isFurniture ? `
