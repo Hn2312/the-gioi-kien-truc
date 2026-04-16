@@ -18,8 +18,13 @@
             button, input { min-height: 52px; }
         }
 
-        .product-card { transition: all 0.4s ease; }
-        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgb(240 98 146 / 0.15); }
+        .product-card { 
+            transition: all 0.4s ease; 
+        }
+        .product-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 20px 25px -5px rgb(240 98 146 / 0.15); 
+        }
 
         .product-image-container {
             position: relative;
@@ -33,11 +38,21 @@
         }
         .product-card:hover .product-img { transform: scale(1.08); }
 
-        .sale-price {
-            font-size: 1.35rem;
-            font-weight: 700;
+        /* Badge "ĐÃ BÁN" sắc nét hơn */
+        .sold-badge {
+            background: linear-gradient(90deg, #fce7f3, #fdf2f8);
             color: #f06292;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 1px 3px rgba(240, 98, 146, 0.2);
         }
+
+        .star { color: #facc15; }
 
         /* Dropdown danh mục */
         .category-wrapper { position: relative; }
@@ -147,21 +162,27 @@ const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO';
 const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ==================== REALTIME NOTIFICATION (ĐÃ SỬA) ====================
-const channel = client.channel('new-purchase');
+let allProducts = [];
+let allCategories = [];
+let currentCategoryName = null;
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-channel
-  .on('broadcast', { event: 'new-order' }, (payload) => {
-      // FIX: Dữ liệu thật nằm trong payload.payload
-      const data = payload.payload || payload;
-      const { customerName, productName, productImage } = data;
-      if (customerName && productName) {
-          showPurchaseToast(customerName, productName, productImage);
-      }
-  })
-  .subscribe();
+// ==================== FAKE TOAST - LẤY SẢN PHẨM THẬT ====================
+const fakeCustomers = ["Anh Minh", "Chị Lan", "Anh Tuấn", "Chị Hoa", "Anh Huy", "Chị Mai", "Anh Khánh", "Chị Hương"];
 
-// Hiển thị toast kèm ảnh
+function getRandomFakeToast() {
+    if (allProducts.length === 0) return;
+
+    const randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)];
+    const customer = fakeCustomers[Math.floor(Math.random() * fakeCustomers.length)];
+    
+    const productImage = (Array.isArray(randomProduct.images) && randomProduct.images.length > 0) 
+        ? randomProduct.images[0] 
+        : (randomProduct.image || 'https://picsum.photos/id/237/300/300');
+
+    showPurchaseToast(customer, randomProduct.name, productImage);
+}
+
 function showPurchaseToast(customerName, productName, productImage) {
     const toastHTML = `
         <div class="toast-notification bg-white shadow-2xl border border-pink-200 rounded-3xl p-4 flex items-center gap-4 w-80">
@@ -180,12 +201,11 @@ function showPurchaseToast(customerName, productName, productImage) {
     }, 6000);
 }
 
-// ==================== CODE CÒN LẠI ====================
-let allProducts = [];
-let allCategories = [];
-let currentCategoryName = null;
-let cart = JSON.parse(localStorage.getItem('cart')) || [];
+// Chạy toast mỗi 2 phút
+setInterval(getRandomFakeToast, 120000);
+setTimeout(getRandomFakeToast, 8000);   // Toast đầu tiên
 
+// ==================== CODE CHÍNH ====================
 function updateCartCount() {
     const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const badge = document.getElementById('cartCount');
@@ -296,6 +316,9 @@ function renderProducts(products) {
         const images = Array.isArray(p.images) && p.images.length ? p.images : [p.image || 'https://via.placeholder.com/300?text=No+Image'];
         const firstImage = images[0];
 
+        const sold = Math.floor(Math.random() * 135) + 18;
+        const rating = (4.4 + Math.random() * 0.6).toFixed(1);
+
         let priceHTML = p.price_to && p.price_to > p.price 
             ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
             : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
@@ -308,12 +331,27 @@ function renderProducts(products) {
                 <div class="p-6">
                     <h3 class="font-semibold text-base">${p.name}</h3>
                     ${priceHTML}
+                    
+                    <div class="flex items-center justify-between mt-4">
+                        <div class="flex items-center gap-1">
+                            <span class="text-yellow-400 text-lg">★</span>
+                            <span class="font-medium">${rating}</span>
+                        </div>
+                        <div class="sold-badge">
+                            <i class="fa-solid fa-fire"></i>
+                            Đã bán ${sold}
+                        </div>
+                    </div>
+
                     <p class="text-sm text-gray-500 mt-3">${p.category || ''}</p>
+                    
                     <div class="mt-6 flex gap-3">
-                        <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
+                        <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
+                                class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
                             Xem chi tiết
                         </button>
-                        <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
+                        <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" 
+                                class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
                             Thêm giỏ
                         </button>
                     </div>
