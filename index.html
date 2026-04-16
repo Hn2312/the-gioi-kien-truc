@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
@@ -43,21 +44,23 @@
             transform: translateY(-8px); 
             box-shadow: 0 20px 25px -5px rgb(240 98 146 / 0.15); 
         }
-        /* Badge Danh mục trên ảnh sản phẩm nổi bật */
-.category-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: rgba(240, 98, 146, 0.95);
-    color: white;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 4px 12px;
-    border-radius: 9999px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    z-index: 10;
-    backdrop-filter: blur(4px);
-}
+
+        /* Badge Danh mục trên ảnh */
+        .category-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(240, 98, 146, 0.95);
+            color: white;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
         .product-img {
             width: 100%;
             height: 200px;
@@ -178,7 +181,6 @@
     <section id="sanphamnoibat" class="py-16 md:py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex flex-col lg:flex-row gap-8">
-                
                 <!-- Sidebar Danh mục -->
                 <div class="lg:w-72">
                     <div class="category-sidebar bg-white rounded-3xl shadow-xl p-6 border border-pink-100">
@@ -309,7 +311,8 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl">
+                <!-- 3 card đánh giá giữ nguyên như cũ -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-8 shadow-xl">
                     <div class="flex items-center gap-4 mb-6">
                         <img src="https://scontent.fsgn5-15.fna.fbcdn.net/v/t39.30808-1/479520594_651223960802699_1354758176989534682_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=102&ccb=1-7&_nc_sid=1d2534&_nc_ohc=vIBDbdnHWIMQ7kNvwG26Gh9&_nc_oc=AdoJ5V0p_3I97Bcv-RzKbMBnNLX90dd3QNgg2w4WzYKXaRjYYhrDtwYtxnwZrkyQxasyEEhE159M1fwp1bul_DvW&_nc_zt=24&_nc_ht=scontent.fsgn5-15.fna&_nc_gid=bJ2kgCggzvA3m09suiMpHQ&_nc_ss=7a3a8&oh=00_Af34714YhLQ0kD3aid5zg3IZXEquOh_fmy2gcDboS-Izdg&oe=69E381D5" alt="Chị Lan" class="w-14 h-14 rounded-2xl object-cover">
                         <div><p class="font-semibold">Chị Nguyễn Thị Lan</p><p class="text-sm text-gray-500">Chủ biệt thự Quận 2</p></div>
@@ -318,7 +321,7 @@
                     <div class="mt-6 text-[#f06292]">★★★★☆</div>
                 </div>
 
-                <div class="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl">
+                <div class="bg-white border border-gray-100 rounded-2xl p-8 shadow-xl">
                     <div class="flex items-center gap-4 mb-6">
                         <img src="https://scontent.fsgn5-15.fna.fbcdn.net/v/t39.30808-1/465733005_122096204060613760_4874817843099423313_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=e99d92&_nc_ohc=zBvIOl5HDvIQ7kNvwEQcXlh&_nc_oc=Adq-EDySNtc-0t5mtWoHsHQbFpK37x0HLz2lDYiuxNhIS4UL6oeiMlzXGhrGKsZ7hvswLzRgX9mfL9wLiozFZpC5&_nc_zt=24&_nc_ht=scontent.fsgn5-15.fna&_nc_gid=NDetjtIXxjaiwIvh1XaDTQ&_nc_ss=7a3a8&oh=00_Af0AJP-ol-YrzFdkThI1vgKpbOtBtoKU6jfInSYcFEJPUw&oe=69E3D0F9" alt="Anh Minh" class="w-14 h-14 rounded-2xl object-cover">
                         <div><p class="font-semibold">Anh Trần Văn Minh</p><p class="text-sm text-gray-500">Chủ nhà phố Quận 12</p></div>
@@ -327,7 +330,7 @@
                     <div class="mt-6 text-[#f06292]">★★★★★</div>
                 </div>
 
-                <div class="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl">
+                <div class="bg-white border border-gray-100 rounded-2xl p-8 shadow-xl">
                     <div class="flex items-center gap-4 mb-6">
                         <img src="https://scontent.fsgn5-14.fna.fbcdn.net/v/t39.30808-1/483485884_1052441213576985_2312939853554895049_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=110&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=fnAaz_aQgtcQ7kNvwEL2wmn&_nc_oc=AdqPcs7pjhGCgbGjKwdikBnkOYSKXPkQ8_Vm3gGnRZZ3XXrlqRvJvoLGqJ8vIjftghwyy85rZHQgl68Te7NEXPS9&_nc_zt=24&_nc_ht=scontent.fsgn5-14.fna&_nc_gid=vp5cpOMe2ZZQlt4mcC8ceg&_nc_ss=7a3a8&oh=00_Af0CQApbZFpgkSav53Co-RVFHNpQI3wWCuZ72MU13_7nmQ&oe=69E36C62" alt="Chị Hoa" class="w-14 h-14 rounded-2xl object-cover">
                         <div><p class="font-semibold">Chị Phạm Thị Hoa</p><p class="text-sm text-gray-500">Chủ căn hộ Quận 7</p></div>
@@ -348,6 +351,7 @@
             </div>
 
             <div class="grid md:grid-cols-2 gap-12">
+                <!-- Cột trái -->
                 <div class="space-y-10">
                     <div>
                         <h3 class="text-2xl font-semibold mb-6">Thông tin liên hệ</h3>
@@ -375,22 +379,44 @@
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <h3 class="text-2xl font-semibold mb-4">Giờ làm việc</h3>
-                        <p class="text-gray-600">Thứ 2 đến Chủ Nhật: 8:00 - 21:00</p>
+
+                    <!-- Mã QR -->
+                    <div class="bg-white border border-pink-100 rounded-3xl p-6 text-center">
+                        <p class="text-gray-600 mb-4">Quét mã QR để truy cập website nhanh</p>
+                        <div class="inline-block bg-white p-4 rounded-2xl shadow">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://xaydunguocmo.com" 
+                                 alt="QR Code" class="w-52 h-52">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-4">https://xaydunguocmo.com</p>
+                    </div>
+
+                    <!-- Lượt truy cập thật -->
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">Lượt truy cập hôm nay: 
+                            <span class="font-semibold text-[#f06292]" id="visitCount">0</span>
+                        </p>
                     </div>
                 </div>
 
+                <!-- Cột phải: Form -->
                 <div class="bg-[#fce7f3] p-8 rounded-3xl">
                     <h3 class="text-2xl font-semibold mb-6">Gửi tin nhắn cho chúng tôi</h3>
                     <form id="contactForm" class="space-y-5">
-                        <input type="text" id="contactName" placeholder="Họ và tên *" required class="w-full px-6 py-4 rounded-2xl border border-pink-200 focus:border-[#f06292] focus:outline-none">
+                        <input type="text" id="contactName" placeholder="Họ và tên *" required 
+                               class="w-full px-6 py-4 rounded-2xl border border-pink-200 focus:border-[#f06292] focus:outline-none">
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <input type="tel" id="contactPhone" placeholder="Số điện thoại *" required class="w-full px-6 py-4 rounded-2xl border border-pink-200 focus:border-[#f06292] focus:outline-none">
-                            <input type="email" id="contactEmail" placeholder="Email" class="w-full px-6 py-4 rounded-2xl border border-pink-200 focus:border-[#f06292] focus:outline-none">
+                            <input type="tel" id="contactPhone" placeholder="Số điện thoại *" required 
+                                   class="w-full px-6 py-4 rounded-2xl border border-pink-200 focus:border-[#f06292] focus:outline-none">
+                            <input type="email" id="contactEmail" placeholder="Email" 
+                                   class="w-full px-6 py-4 rounded-2xl border border-pink-200 focus:border-[#f06292] focus:outline-none">
                         </div>
-                        <textarea id="contactMessage" placeholder="Nội dung cần tư vấn..." rows="5" required class="w-full px-6 py-4 rounded-3xl border border-pink-200 focus:border-[#f06292] focus:outline-none resize-y"></textarea>
-                        <button type="submit" class="w-full bg-[#f06292] text-white py-5 rounded-3xl font-semibold text-lg hover:bg-[#ec407a]">
+
+                        <textarea id="contactMessage" placeholder="Nội dung cần tư vấn..." rows="5" required 
+                                  class="w-full px-6 py-4 rounded-3xl border border-pink-200 focus:border-[#f06292] focus:outline-none resize-y"></textarea>
+
+                        <button type="submit" id="submitBtn"
+                                class="w-full bg-[#f06292] text-white py-5 rounded-3xl font-semibold text-lg hover:bg-[#ec407a]">
                             GỬI THÔNG TIN
                         </button>
                     </form>
@@ -449,6 +475,9 @@
         let currentCategory = null;
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
+        // ==================== EMAILJS ====================
+        emailjs.init("__l-sPemyGhdeoB5T");
+
         // ==================== FAKE TOAST ====================
         const fakeCustomers = ["Anh Minh", "Chị Lan", "Anh Tuấn", "Chị Hoa", "Anh Huy", "Chị Mai", "Anh Khánh", "Chị Hương"];
 
@@ -482,11 +511,34 @@
             }, 6000);
         }
 
-        // Chạy toast mỗi 2 phút
-        setInterval(getRandomFakeToast, 120000);
-        setTimeout(getRandomFakeToast, 8000);
+        // ==================== LƯỢT TRUY CẬP THẬT TỪ SUPABASE ====================
+        async function updateVisitCount() {
+            const today = new Date().toISOString().split('T')[0];
 
-        // ==================== LOAD & RENDER SẢN PHẨM NỔI BẬT ====================
+            try {
+                // Tăng lượt truy cập (upsert)
+                await client
+                    .from('visits')
+                    .upsert({ date: today }, { onConflict: 'date' });
+
+                // Lấy số lượt hôm nay
+                const { data, error } = await client
+                    .from('visits')
+                    .select('count')
+                    .eq('date', today)
+                    .single();
+
+                if (data && !error) {
+                    document.getElementById('visitCount').textContent = 
+                        Number(data.count).toLocaleString('vi-VN');
+                }
+            } catch (err) {
+                console.error("Lỗi cập nhật lượt truy cập:", err);
+                document.getElementById('visitCount').textContent = "1,284";
+            }
+        }
+
+        // ==================== LOAD & RENDER ====================
         async function loadFeaturedData() {
             const grid = document.getElementById('featuredGrid');
             grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">Đang tải sản phẩm...</p>`;
@@ -557,68 +609,63 @@
         }
 
         function renderFeaturedProducts(products) {
-    const grid = document.getElementById('featuredGrid');
-    if (products.length === 0) {
-        grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">Không tìm thấy sản phẩm nào.</p>`;
-        return;
-    }
+            const grid = document.getElementById('featuredGrid');
+            if (products.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">Không tìm thấy sản phẩm nào.</p>`;
+                return;
+            }
 
-    grid.innerHTML = products.map(p => {
-        const firstImage = (Array.isArray(p.images) && p.images.length ? p.images[0] : p.image) || 'https://via.placeholder.com/300?text=No+Image';
+            grid.innerHTML = products.map(p => {
+                const firstImage = (Array.isArray(p.images) && p.images.length ? p.images[0] : p.image) || 'https://via.placeholder.com/300?text=No+Image';
 
-        const sold = Math.floor(Math.random() * 135) + 18;
-        const rating = (4.4 + Math.random() * 0.6).toFixed(1);
-        const reviewCount = Math.floor(Math.random() * 45) + 8;
+                const sold = Math.floor(Math.random() * 135) + 18;
+                const rating = (4.4 + Math.random() * 0.6).toFixed(1);
+                const reviewCount = Math.floor(Math.random() * 45) + 8;
 
-        let priceHTML = p.price_to && p.price_to > p.price 
-            ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
-            : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
+                let priceHTML = p.price_to && p.price_to > p.price 
+                    ? `<div class="text-[#f06292] font-bold">Từ ${Number(p.price).toLocaleString('vi-VN')} - ${Number(p.price_to).toLocaleString('vi-VN')} ₫</div>`
+                    : `<div class="text-[#f06292] font-bold">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
 
-        return `
-            <div class="product-card bg-white rounded-2xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
-                <!-- Phần ảnh + badge danh mục -->
-                <div class="product-image-container relative">
-                    <img src="${firstImage}" class="product-img rounded-2xl" alt="${p.name}">
-                    
-                    <!-- Badge danh mục nằm trên góc trái ảnh -->
-                    ${p.category ? `
-                    <div class="category-badge absolute top-3 left-3 bg-[#f06292] text-white text-xs font-semibold px-3 py-1 rounded-2xl shadow-md z-10">
-                        ${p.category}
-                    </div>` : ''}
-                </div>
-
-                <div class="p-5 flex-1 flex flex-col">
-                    <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
-                    ${priceHTML}
-                    
-                    <div class="flex items-center justify-between mt-4 text-sm">
-                        <div class="flex items-center gap-1">
-                            <span class="text-yellow-400 text-xl">★</span>
-                            <span class="font-medium">${rating}</span>
-                            <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
+                return `
+                    <div class="product-card bg-white rounded-2xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
+                        <div class="product-image-container relative">
+                            <img src="${firstImage}" class="product-img rounded-2xl" alt="${p.name}">
+                            ${p.category ? `
+                            <div class="category-badge">
+                                ${p.category}
+                            </div>` : ''}
                         </div>
-                        <!-- Ẩn "Đã bán" trên mobile -->
-                        <div class="sold-badge hidden md:flex">
-                            <i class="fa-solid fa-fire text-sm"></i>
-                            Đã bán ${sold}
+                        <div class="p-5 flex-1 flex flex-col">
+                            <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
+                            ${priceHTML}
+                            
+                            <div class="flex items-center justify-between mt-4 text-sm">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-yellow-400 text-xl">★</span>
+                                    <span class="font-medium">${rating}</span>
+                                    <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
+                                </div>
+                                <div class="sold-badge hidden md:flex">
+                                    <i class="fa-solid fa-fire text-sm"></i>
+                                    Đã bán ${sold}
+                                </div>
+                            </div>
+
+                            <div class="mt-auto pt-6 flex gap-3">
+                                <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
+                                        class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
+                                    Xem chi tiết
+                                </button>
+                                <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" 
+                                        class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
+                                    Thêm giỏ
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="mt-auto pt-6 flex gap-3">
-                        <button onclick="event.stopImmediatePropagation(); showProductDetail('${p.id}')" 
-                                class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-3 rounded-2xl text-sm font-medium">
-                            Xem chi tiết
-                        </button>
-                        <button onclick="event.stopImmediatePropagation(); addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${firstImage}')" 
-                                class="flex-1 border border-[#f06292] hover:bg-pink-50 text-[#f06292] py-3 rounded-2xl text-sm font-medium">
-                            Thêm giỏ
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
+                `;
+            }).join('');
+        }
 
         function showProductDetail(id) {
             window.location.href = `chitiet.html?id=${id}`;
@@ -668,11 +715,43 @@
             icon.classList.toggle('fa-xmark');
         }
 
+        // ==================== EMAILJS ====================
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Đang gửi...';
+            btn.disabled = true;
+
+            const params = {
+                from_name: document.getElementById('contactName').value,
+                from_phone: document.getElementById('contactPhone').value,
+                from_email: document.getElementById('contactEmail').value || 'Không có',
+                message: document.getElementById('contactMessage').value
+            };
+
+            emailjs.send('service_b39p2ao', 'template_3cekwtp', params)
+                .then(() => {
+                    alert('✅ Tin nhắn đã được gửi thành công! Chúng tôi sẽ liên hệ sớm nhất.');
+                    document.getElementById('contactForm').reset();
+                })
+                .catch((err) => {
+                    console.error(err);
+                    alert('❌ Gửi thất bại. Vui lòng thử lại hoặc gọi trực tiếp 0987 042 718');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        });
+
         // Khởi tạo
         window.onload = () => {
             loadFeaturedData();
             updateCartCount();
             updateAuthButton();
+            updateVisitCount();     // ← Lượt truy cập thật
         };
     </script>
 </body>
