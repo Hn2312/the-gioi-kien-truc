@@ -716,36 +716,37 @@ async function updateVisitCount() {
             icon.classList.toggle('fa-xmark');
         }
 
-        // ==================== EMAILJS ====================
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // ==================== EMAILJS - GỬI FORM ====================
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-            const btn = document.getElementById('submitBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Đang gửi...';
-            btn.disabled = true;
+    const btn = document.getElementById('submitBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Đang gửi...';
+    btn.disabled = true;
 
-            const params = {
-                from_name: document.getElementById('contactName').value,
-                from_phone: document.getElementById('contactPhone').value,
-                from_email: document.getElementById('contactEmail').value || 'Không có',
-                message: document.getElementById('contactMessage').value
-            };
+    const params = {
+        from_name: document.getElementById('contactName').value.trim() || "Không có tên",
+        from_phone: document.getElementById('contactPhone').value.trim() || "Không có số điện thoại",
+        from_email: document.getElementById('contactEmail').value.trim() || "Không có email",
+        message: document.getElementById('contactMessage').value.trim() || "Không có nội dung"
+        
+    };
 
-            emailjs.send('service_b39p2ao', 'template_3cekwtp', params)
-                .then(() => {
-                    alert('✅ Tin nhắn đã được gửi thành công! Chúng tôi sẽ liên hệ sớm nhất.');
-                    document.getElementById('contactForm').reset();
-                })
-                .catch((err) => {
-                    console.error(err);
-                    alert('❌ Gửi thất bại. Vui lòng thử lại hoặc gọi trực tiếp 0987 042 718');
-                })
-                .finally(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                });
+    emailjs.send('service_b39p2ao', 'template_3cekwtp', params)
+        .then(() => {
+            alert('✅ Tin nhắn đã được gửi thành công!\nChúng tôi sẽ liên hệ với bạn sớm nhất.');
+            document.getElementById('contactForm').reset();
+        })
+        .catch((err) => {
+            console.error('Lỗi gửi email:', err);
+            alert('❌ Gửi thất bại. Vui lòng thử lại hoặc gọi trực tiếp 0987 042 718');
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         });
+});
 
         // Khởi tạo
         window.onload = () => {

@@ -19,7 +19,6 @@
             border-radius: 9999px;
         }
         
-        /* Tối ưu mobile */
         @layer base {
             html { font-size: 16px; }
             input, select, button, textarea {
@@ -95,9 +94,16 @@
         <div class="p-5 md:p-8">
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-10">
                 
-                <!-- Form thêm / sửa -->
+                <!-- Form thêm / sửa sản phẩm -->
                 <div>
-                    <h2 id="formTitle" class="text-2xl font-semibold mb-6 text-gray-800">➕ Thêm sản phẩm mới</h2>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="formTitle" class="text-2xl font-semibold text-gray-800">➕ Thêm sản phẩm mới</h2>
+                        <button onclick="showCategoryManager()" 
+                                class="px-5 py-2 bg-pink-100 hover:bg-pink-200 rounded-2xl text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-tags"></i> Quản lý danh mục
+                        </button>
+                    </div>
+
                     <div class="space-y-6">
                         <input id="name" class="w-full p-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base" placeholder="Tên sản phẩm">
 
@@ -164,18 +170,66 @@
     </div>
 </div>
 
+<!-- ==================== MODAL QUẢN LÝ DANH MỤC ==================== -->
+<div id="categoryManagerModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-3xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h3 class="text-2xl font-semibold text-gray-800">📋 Quản lý danh mục</h3>
+            <button onclick="hideCategoryManager()" class="text-gray-500 hover:text-gray-700 text-3xl leading-none">×</button>
+        </div>
+        
+        <div class="p-6 flex-1 overflow-y-auto" id="categoryList">
+            <!-- Danh sách danh mục sẽ được JS render -->
+        </div>
+
+        <div class="p-6 border-t">
+            <button onclick="showAddCategoryModal()" 
+                    class="w-full py-4 bg-[#f06292] text-white font-semibold rounded-3xl hover:bg-[#ec407a] transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus"></i> Thêm danh mục mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm / sửa danh mục -->
+<div id="categoryFormModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="p-6 border-b">
+            <h3 id="categoryFormTitle" class="text-2xl font-semibold text-gray-800">➕ Thêm danh mục mới</h3>
+        </div>
+        <div class="p-6 space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tên danh mục</label>
+                <input id="categoryNameInput" 
+                       class="w-full p-4 border border-pink-200 rounded-3xl focus:border-[#f06292] outline-none text-base" 
+                       placeholder="Ví dụ: Ghế sofa, Bàn ăn, Đèn trang trí...">
+            </div>
+        </div>
+        <div class="p-6 border-t flex gap-3">
+            <button onclick="hideCategoryFormModal()" 
+                    class="flex-1 py-4 text-gray-600 font-medium rounded-3xl border border-gray-300 hover:bg-gray-50 transition">
+                Hủy
+            </button>
+            <button id="categorySaveBtn" onclick="saveCategory()" 
+                    class="flex-1 py-4 bg-[#f06292] text-white font-semibold rounded-3xl hover:bg-[#ec407a] transition">
+                Lưu
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ==================== SUPABASE ====================
 const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO'; 
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let editingProductId = null;
 let selectedFiles = [];
 let selectedRealFiles = [];
+let editingCategoryId = null;
 
-// Đăng xuất
+// ==================== ĐĂNG XUẤT ====================
 function logout() {
     if (confirm('Bạn có chắc muốn đăng xuất Admin?')) {
         localStorage.removeItem('adminLoggedIn');
@@ -183,15 +237,17 @@ function logout() {
     }
 }
 
-// Load danh mục
+// ==================== QUẢN LÝ DANH MỤC ====================
 async function loadCategories() {
     const select = document.getElementById('categorySelect');
     select.innerHTML = '<option value="">Đang tải danh mục...</option>';
+    
     const { data, error } = await supabaseClient.from('categories').select('id, name').order('name');
     if (error) {
         select.innerHTML = '<option value="">Lỗi tải danh mục</option>';
         return;
     }
+    
     select.innerHTML = '<option value="">Chọn danh mục...</option>';
     data.forEach(cat => {
         const opt = document.createElement('option');
@@ -201,7 +257,142 @@ async function loadCategories() {
     });
 }
 
-// Preview ảnh
+function showCategoryManager() {
+    document.getElementById('categoryManagerModal').classList.remove('hidden');
+    loadCategoryList();
+}
+
+function hideCategoryManager() {
+    document.getElementById('categoryManagerModal').classList.add('hidden');
+}
+
+async function loadCategoryList() {
+    const container = document.getElementById('categoryList');
+    container.innerHTML = '<p class="text-center py-8 text-gray-500">Đang tải...</p>';
+
+    const { data: categories, error } = await supabaseClient
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+    if (error || !categories || categories.length === 0) {
+        container.innerHTML = '<p class="text-center py-8 text-gray-500">Chưa có danh mục nào.</p>';
+        return;
+    }
+
+    let html = '<div class="space-y-3">';
+    for (const cat of categories) {
+        const { count } = await supabaseClient
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', cat.id);
+
+        html += `
+            <div class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
+                <div>
+                    <span class="font-medium">${cat.name}</span>
+                    <span class="text-xs text-gray-500 ml-2">(${count || 0} sản phẩm)</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="editCategory(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')" 
+                            class="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl text-sm">Sửa</button>
+                    <button onclick="deleteCategory(${cat.id}, ${count || 0})" 
+                            class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-sm ${count > 0 ? 'opacity-50 cursor-not-allowed' : ''}">
+                        Xóa
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function showAddCategoryModal() {
+    editingCategoryId = null;
+    document.getElementById('categoryFormTitle').textContent = '➕ Thêm danh mục mới';
+    document.getElementById('categoryNameInput').value = '';
+    document.getElementById('categorySaveBtn').textContent = 'Thêm danh mục';
+    document.getElementById('categoryFormModal').classList.remove('hidden');
+}
+
+function editCategory(id, name) {
+    editingCategoryId = id;
+    document.getElementById('categoryFormTitle').textContent = '✏️ Sửa danh mục';
+    document.getElementById('categoryNameInput').value = name;
+    document.getElementById('categorySaveBtn').textContent = 'Cập nhật';
+    document.getElementById('categoryFormModal').classList.remove('hidden');
+}
+
+function hideCategoryFormModal() {
+    document.getElementById('categoryFormModal').classList.add('hidden');
+    editingCategoryId = null;
+}
+
+async function saveCategory() {
+    const name = document.getElementById('categoryNameInput').value.trim();
+    if (!name) {
+        alert("Vui lòng nhập tên danh mục!");
+        return;
+    }
+
+    try {
+        if (editingCategoryId) {
+            // Cập nhật
+            const { error } = await supabaseClient
+                .from('categories')
+                .update({ name })
+                .eq('id', editingCategoryId);
+            if (error) throw error;
+            alert("✅ Cập nhật danh mục thành công!");
+        } else {
+            // Thêm mới
+            const { data: existing } = await supabaseClient
+                .from('categories')
+                .select('id')
+                .ilike('name', name)
+                .limit(1);
+
+            if (existing && existing.length > 0) {
+                alert("❌ Danh mục này đã tồn tại!");
+                return;
+            }
+
+            const { error } = await supabaseClient.from('categories').insert({ name });
+            if (error) throw error;
+            alert("✅ Thêm danh mục thành công!");
+        }
+
+        hideCategoryFormModal();
+        await loadCategories();
+        await loadCategoryList();
+    } catch (error) {
+        console.error(error);
+        alert("❌ Lỗi: " + error.message);
+    }
+}
+
+async function deleteCategory(id, productCount) {
+    if (productCount > 0) {
+        alert(`Không thể xóa vì danh mục này đang có ${productCount} sản phẩm.`);
+        return;
+    }
+    if (!confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
+
+    try {
+        const { error } = await supabaseClient.from('categories').delete().eq('id', id);
+        if (error) throw error;
+
+        alert("✅ Xóa danh mục thành công!");
+        await loadCategories();
+        await loadCategoryList();
+    } catch (error) {
+        console.error(error);
+        alert("❌ Lỗi khi xóa: " + error.message);
+    }
+}
+
+// ==================== QUẢN LÝ ẢNH ====================
 document.getElementById('imageFiles').addEventListener('change', e => {
     selectedFiles = Array.from(e.target.files);
     renderPreviews('imagePreviewGrid', selectedFiles);
@@ -219,7 +410,7 @@ function renderPreviews(gridId, files) {
         const reader = new FileReader();
         reader.onload = ev => {
             const div = document.createElement('div');
-            div.className = 'preview-item relative';
+            div.className = 'preview-item';
             div.innerHTML = `
                 <img src="${ev.target.result}" alt="">
                 <div onclick="removePreview('${gridId}', ${index}); event.stopImmediatePropagation()" class="remove-btn">×</div>
@@ -236,7 +427,7 @@ function removePreview(gridId, index) {
     renderPreviews(gridId, gridId === 'imagePreviewGrid' ? selectedFiles : selectedRealFiles);
 }
 
-// Load danh sách sản phẩm
+// ==================== QUẢN LÝ SẢN PHẨM ====================
 async function loadProducts() {
     const container = document.getElementById('productList');
     container.innerHTML = '<p class="text-center py-12 text-gray-500">Đang tải...</p>';
@@ -283,7 +474,7 @@ async function deleteProduct(id) {
 async function addProduct() {
     const btn = document.getElementById('addBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = 'Đang upload ảnh và thêm...';
+    btn.innerHTML = 'Đang xử lý...';
     btn.disabled = true;
 
     const name = document.getElementById('name').value.trim();
@@ -293,7 +484,7 @@ async function addProduct() {
     const desc = document.getElementById('desc').value.trim();
 
     if (!name || !price || !category_id || selectedFiles.length === 0) {
-        alert("Vui lòng nhập đầy đủ và chọn ít nhất 1 ảnh!");
+        alert("Vui lòng nhập đầy đủ thông tin và chọn ít nhất 1 ảnh sản phẩm!");
         btn.innerHTML = originalText;
         btn.disabled = false;
         return;
@@ -365,27 +556,29 @@ async function editProduct(id) {
     document.getElementById('realImageFiles').value = '';
 
     // Preview ảnh chính
-    renderPreviews('imagePreviewGrid', []);
-    const images = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
+    const imageGrid = document.getElementById('imagePreviewGrid');
+    imageGrid.innerHTML = '';
+    const images = Array.isArray(p.images) && p.images.length > 0 ? p.images : [];
     images.forEach(url => {
         const div = document.createElement('div');
-        div.className = 'preview-item relative';
+        div.className = 'preview-item';
         div.innerHTML = `<img src="${url}" alt="">`;
-        document.getElementById('imagePreviewGrid').appendChild(div);
+        imageGrid.appendChild(div);
     });
 
     // Preview ảnh thực tế
-    renderPreviews('realPreviewGrid', []);
+    const realGrid = document.getElementById('realPreviewGrid');
+    realGrid.innerHTML = '';
     const realImages = Array.isArray(p.real_images) ? p.real_images : [];
     realImages.forEach(url => {
         const div = document.createElement('div');
-        div.className = 'preview-item relative';
+        div.className = 'preview-item';
         div.innerHTML = `<img src="${url}" alt="">`;
-        document.getElementById('realPreviewGrid').appendChild(div);
+        realGrid.appendChild(div);
     });
 
     document.getElementById('formTitle').innerHTML = '✏️ Sửa sản phẩm';
-    document.getElementById('addBtn').innerHTML = '💾 CẬP NHẬT';
+    document.getElementById('addBtn').innerHTML = '💾 CẬP NHẬT SẢN PHẨM';
     document.getElementById('addBtn').onclick = updateProduct;
 }
 
@@ -403,7 +596,7 @@ async function updateProduct() {
     const desc = document.getElementById('desc').value.trim();
 
     if (!name || !price || !category_id) {
-        alert("Vui lòng nhập đầy đủ!");
+        alert("Vui lòng nhập đầy đủ thông tin!");
         btn.innerHTML = originalText;
         btn.disabled = false;
         return;
@@ -440,7 +633,7 @@ async function updateProduct() {
             real_images: realImageUrls.length > 0 ? realImageUrls : undefined
         }).eq('id', editingProductId);
 
-        alert("✅ Cập nhật thành công!");
+        alert("✅ Cập nhật sản phẩm thành công!");
         resetForm();
         loadProducts();
     } catch (error) {
@@ -462,6 +655,7 @@ function resetForm() {
     document.getElementById('realImageFiles').value = '';
     document.getElementById('imagePreviewGrid').innerHTML = '';
     document.getElementById('realPreviewGrid').innerHTML = '';
+    
     selectedFiles = [];
     selectedRealFiles = [];
 
@@ -471,7 +665,7 @@ function resetForm() {
     editingProductId = null;
 }
 
-// Khởi tạo
+// ==================== KHỞI TẠO ====================
 async function initAdmin() {
     await loadCategories();
     loadProducts();
