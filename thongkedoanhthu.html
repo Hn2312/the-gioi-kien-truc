@@ -232,12 +232,12 @@ async function exportPDF() {
     // === THÊM TIÊU ĐỀ BÁO CÁO CĂN GIỮA ===
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("BÁO CÁO THỐNG KÊ DOANH THU", 105, 25, { align: "center" });
+    doc.text("BÁO CÁO DOANH THU", 105, 25, { align: "center" });
 
     // Thêm ngày xuất báo cáo (căn giữa, nhỏ hơn)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
-    doc.text(`Ngày xuất: ${new Date().toLocaleDateString('vi-VN', { 
+    doc.text(`Ngày : ${new Date().toLocaleDateString('vi-VN', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
