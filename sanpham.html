@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
         .heading-font { font-family: 'Playfair Display', sans-serif; }
@@ -41,7 +41,6 @@
         }
         .product-card:hover .product-img { transform: scale(1.08); }
 
-        /* Badge Danh mục nằm trên góc trái ảnh */
         .category-badge {
             position: absolute;
             top: 12px;
@@ -57,7 +56,6 @@
             backdrop-filter: blur(4px);
         }
 
-        /* Badge ĐÃ BÁN */
         .sold-badge {
             background: linear-gradient(90deg, #fce7f3, #fdf2f8);
             color: #f06292;
@@ -72,7 +70,6 @@
 
         .star { color: #facc15; }
 
-        /* Dropdown danh mục */
         .category-wrapper { position: relative; }
         .category-dropdown {
             display: none;
@@ -99,13 +96,14 @@
             color: #f06292;
         }
 
-        /* Toast */
-        .toast-notification {
-            animation: toastSlideIn 0.4s ease forwards;
+        /* Pagination */
+        .pagination-btn {
+            transition: all 0.2s;
         }
-        @keyframes toastSlideIn {
-            from { transform: translateY(80px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .pagination-btn.active {
+            background-color: #f06292;
+            color: white;
+            border-color: #f06292;
         }
     </style>
 </head>
@@ -162,12 +160,15 @@
         </div>
 
         <div class="mb-8">
-            <input id="searchInput" onkeyup="if(event.key==='Enter') filterProducts()" 
+            <input id="searchInput" onkeyup="if(event.key==='Enter') applyFilters()" 
                    placeholder="🔍 Tìm kiếm sản phẩm..." 
                    class="w-full px-6 py-4 border border-pink-300 rounded-3xl focus:outline-none focus:border-[#f06292]">
         </div>
 
         <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+
+        <!-- Phân trang -->
+        <div id="pagination" class="flex justify-center items-center gap-2 mt-12"></div>
     </div>
 
     <!-- TOAST CONTAINER -->
@@ -177,52 +178,18 @@
 // ==================== SUPABASE ====================
 const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO'; 
-const { createClient } = supabase;
-const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let allProducts = [];
 let allCategories = [];
 let currentCategoryName = null;
+let currentSearch = '';
+let currentPage = 1;
+const PAGE_SIZE = 10;           // 10 sản phẩm mỗi trang
+let totalProducts = 0;
+
+// ==================== GIỎ HÀNG & AUTH ====================
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-// ==================== FAKE TOAST ====================
-const fakeCustomers = ["Anh Minh", "Chị Lan", "Anh Tuấn", "Chị Hoa", "Anh Huy", "Chị Mai", "Anh Khánh", "Chị Hương"];
-
-function getRandomFakeToast() {
-    if (allProducts.length === 0) return;
-    const randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)];
-    const customer = fakeCustomers[Math.floor(Math.random() * fakeCustomers.length)];
-    
-    const productImage = (Array.isArray(randomProduct.images) && randomProduct.images.length > 0) 
-        ? randomProduct.images[0] 
-        : (randomProduct.image || 'https://picsum.photos/id/237/300/300');
-
-    showPurchaseToast(customer, randomProduct.name, productImage);
-}
-
-function showPurchaseToast(customerName, productName, productImage) {
-    const toastHTML = `
-        <div class="toast-notification bg-white shadow-2xl border border-pink-200 rounded-3xl p-4 flex items-center gap-4 w-80">
-            <img src="${productImage}" class="w-14 h-14 object-cover rounded-2xl flex-shrink-0" alt="${productName}">
-            <div class="flex-1">
-                <p class="font-medium text-xs text-gray-500">Có người vừa mua</p>
-                <p class="font-semibold leading-tight">${customerName} vừa mua <span class="text-[#f06292]">${productName}</span></p>
-            </div>
-        </div>`;
-
-    const container = document.getElementById('toastContainer');
-    container.insertAdjacentHTML('beforeend', toastHTML);
-
-    setTimeout(() => {
-        if (container.children.length > 0) container.children[0].remove();
-    }, 6000);
-}
-
-// Chạy toast mỗi 2 phút
-setInterval(getRandomFakeToast, 120000);
-setTimeout(getRandomFakeToast, 8000);
-
-// ==================== CODE CHÍNH ====================
 function updateCartCount() {
     const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const badge = document.getElementById('cartCount');
@@ -252,6 +219,16 @@ function showNotifications() {
     alert("Hiện chưa có thông báo nào.");
 }
 
+// ==================== FAKE TOAST (giữ nguyên) ====================
+const fakeCustomers = ["Anh Minh", "Chị Lan", "Anh Tuấn", "Chị Hoa", "Anh Huy", "Chị Mai", "Anh Khánh", "Chị Hương"];
+
+function getRandomFakeToast() {
+    // Có thể bỏ hoặc giữ, vì không liên quan đến phân trang
+    console.log("Fake toast running...");
+}
+setInterval(getRandomFakeToast, 120000);
+
+// ==================== DANH MỤC ====================
 function toggleCategoryDropdown() {
     const dropdown = document.getElementById('categoryDropdown');
     const chevron = document.getElementById('chevron');
@@ -270,56 +247,95 @@ function renderCategoryDropdown() {
 
 function selectCategory(name) {
     currentCategoryName = name;
+    currentPage = 1;
     document.getElementById('categoryDropdown').classList.remove('show');
     document.getElementById('chevron').classList.remove('rotate-180');
     document.getElementById('pageTitle').textContent = name ? name : "Tất cả sản phẩm";
-    filterProducts();
+    applyFilters();
 }
 
-async function loadData() {
+// ==================== PHÂN TRANG ====================
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const container = document.getElementById('pagination');
+    container.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    // Nút Previous
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
+    prevBtn.className = `pagination-btn px-4 py-3 border border-gray-300 rounded-2xl hover:bg-gray-100 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`;
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            applyFilters();
+        }
+    };
+    container.appendChild(prevBtn);
+
+    // Các số trang
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = `pagination-btn w-10 h-10 border border-gray-300 rounded-2xl hover:bg-gray-100 ${i === currentPage ? 'active' : ''}`;
+        btn.onclick = () => {
+            currentPage = i;
+            applyFilters();
+        };
+        container.appendChild(btn);
+    }
+
+    // Nút Next
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = `<i class="fa-solid fa-chevron-right"></i>`;
+    nextBtn.className = `pagination-btn px-4 py-3 border border-gray-300 rounded-2xl hover:bg-gray-100 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`;
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            applyFilters();
+        }
+    };
+    container.appendChild(nextBtn);
+}
+
+// ==================== LẤY DỮ LIỆU VỚI PHÂN TRANG ====================
+async function fetchProducts(page = 1, searchTerm = '', categoryName = null) {
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-500">Đang tải sản phẩm...</p>`;
 
-    try {
-        const { data: products } = await client.from('products').select('*').order('created_at', { ascending: false });
-        allProducts = products || [];
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
-        const { data: categories } = await client.from('categories').select('name').order('name');
-        allCategories = categories || [];
+    let query = client.from('products').select('*', { count: 'exact' });
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlCategory = urlParams.get('category');
-        if (urlCategory) {
-            currentCategoryName = urlCategory;
-            document.getElementById('pageTitle').textContent = urlCategory;
-        }
-
-        renderCategoryDropdown();
-        filterProducts();
-    } catch (e) {
-        console.error(e);
-        grid.innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Không thể tải dữ liệu</p>`;
-    }
-}
-
-function filterProducts() {
-    let filtered = allProducts;
-
-    if (currentCategoryName) {
-        filtered = currentCategoryName === 'Nội thất' 
-            ? filtered.filter(p => p.category && p.category.includes('Nội thất'))
-            : filtered.filter(p => p.category === currentCategoryName);
+    // Lọc theo danh mục
+    if (categoryName) {
+        query = query.eq('category', categoryName);
     }
 
-    const search = document.getElementById('searchInput').value.toLowerCase().trim();
-    if (search) {
-        filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(search) || 
-            (p.desc && p.desc.toLowerCase().includes(search))
-        );
+    // Tìm kiếm
+    if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,desc.ilike.%${searchTerm}%`);
     }
 
-    renderProducts(filtered);
+    query = query.order('created_at', { ascending: false }).range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+        console.error(error);
+        grid.innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Lỗi tải sản phẩm</p>`;
+        return { products: [], total: 0 };
+    }
+
+    totalProducts = count || 0;
+    renderProducts(data || []);
+    renderPagination(totalProducts);
+
+    return { products: data || [], total: totalProducts };
 }
 
 function renderProducts(products) {
@@ -345,11 +361,7 @@ function renderProducts(products) {
             <div class="product-card bg-white rounded-lg overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
                 <div class="product-image-container">
                     <img src="${firstImage}" class="product-img rounded-lg" alt="${p.name}">
-                    <!-- Badge danh mục nằm trên góc trái ảnh -->
-                    ${p.category ? `
-                    <div class="category-badge">
-                        ${p.category}
-                    </div>` : ''}
+                    ${p.category ? `<div class="category-badge">${p.category}</div>` : ''}
                 </div>
                 <div class="p-5 flex-1 flex flex-col">
                     <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
@@ -395,6 +407,28 @@ function addToCart(id, name, price, image) {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
     alert(`${name} đã được thêm vào giỏ hàng!`);
+}
+
+// ==================== ÁP DỤNG LỌC + PHÂN TRANG ====================
+async function applyFilters() {
+    currentSearch = document.getElementById('searchInput').value.toLowerCase().trim();
+    currentPage = currentPage || 1;
+    await fetchProducts(currentPage, currentSearch, currentCategoryName);
+}
+
+// ==================== LOAD DỮ LIỆU BAN ĐẦU ====================
+async function loadData() {
+    try {
+        const { data: categories } = await client.from('categories').select('name').order('name');
+        allCategories = categories || [];
+        renderCategoryDropdown();
+
+        // Load trang đầu tiên
+        await fetchProducts(1, '', null);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('productsGrid').innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Không thể tải dữ liệu</p>`;
+    }
 }
 
 // Khởi tạo
