@@ -184,12 +184,11 @@ let allCategories = [];
 let currentCategoryName = null;
 let currentSearch = '';
 let currentPage = 1;
-const PAGE_SIZE = 10;           // 10 sản phẩm mỗi trang
-let totalProducts = 0;
+const PAGE_SIZE = 10;           // ← Đúng 10 sản phẩm mỗi trang như anh yêu cầu
 
-// ==================== GIỎ HÀNG & AUTH ====================
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
+// ==================== GIỎ HÀNG & AUTH ====================
 function updateCartCount() {
     const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const badge = document.getElementById('cartCount');
@@ -215,18 +214,7 @@ function updateAuthButton() {
     btn.innerHTML = currentUser ? `<i class="fa-solid fa-right-from-bracket text-2xl"></i>` : `<i class="fa-solid fa-user text-2xl"></i>`;
 }
 
-function showNotifications() {
-    alert("Hiện chưa có thông báo nào.");
-}
-
-// ==================== FAKE TOAST (giữ nguyên) ====================
-const fakeCustomers = ["Anh Minh", "Chị Lan", "Anh Tuấn", "Chị Hoa", "Anh Huy", "Chị Mai", "Anh Khánh", "Chị Hương"];
-
-function getRandomFakeToast() {
-    // Có thể bỏ hoặc giữ, vì không liên quan đến phân trang
-    console.log("Fake toast running...");
-}
-setInterval(getRandomFakeToast, 120000);
+function showNotifications() { alert("Hiện chưa có thông báo nào."); }
 
 // ==================== DANH MỤC ====================
 function toggleCategoryDropdown() {
@@ -239,6 +227,7 @@ function toggleCategoryDropdown() {
 function renderCategoryDropdown() {
     const dropdown = document.getElementById('categoryDropdown');
     let html = `<a onclick="selectCategory(null)" class="block px-6 py-3 hover:bg-[#fce7f3]">Tất cả sản phẩm</a>`;
+    
     allCategories.forEach(cat => {
         html += `<a onclick="selectCategory('${cat.name}')" class="block px-6 py-3 hover:bg-[#fce7f3]">${cat.name}</a>`;
     });
@@ -262,46 +251,33 @@ function renderPagination(total) {
 
     if (totalPages <= 1) return;
 
-    // Nút Previous
+    // Previous
     const prevBtn = document.createElement('button');
     prevBtn.innerHTML = `<i class="fa-solid fa-chevron-left"></i>`;
     prevBtn.className = `pagination-btn px-4 py-3 border border-gray-300 rounded-2xl hover:bg-gray-100 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`;
     prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-        if (currentPage > 1) {
-            currentPage--;
-            applyFilters();
-        }
-    };
+    prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; applyFilters(); }};
     container.appendChild(prevBtn);
 
-    // Các số trang
+    // Số trang
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
         btn.className = `pagination-btn w-10 h-10 border border-gray-300 rounded-2xl hover:bg-gray-100 ${i === currentPage ? 'active' : ''}`;
-        btn.onclick = () => {
-            currentPage = i;
-            applyFilters();
-        };
+        btn.onclick = () => { currentPage = i; applyFilters(); };
         container.appendChild(btn);
     }
 
-    // Nút Next
+    // Next
     const nextBtn = document.createElement('button');
     nextBtn.innerHTML = `<i class="fa-solid fa-chevron-right"></i>`;
     nextBtn.className = `pagination-btn px-4 py-3 border border-gray-300 rounded-2xl hover:bg-gray-100 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`;
     nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            applyFilters();
-        }
-    };
+    nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; applyFilters(); }};
     container.appendChild(nextBtn);
 }
 
-// ==================== LẤY DỮ LIỆU VỚI PHÂN TRANG ====================
+// ==================== LẤY DỮ LIỆU ====================
 async function fetchProducts(page = 1, searchTerm = '', categoryName = null) {
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-500">Đang tải sản phẩm...</p>`;
@@ -311,12 +287,10 @@ async function fetchProducts(page = 1, searchTerm = '', categoryName = null) {
 
     let query = client.from('products').select('*', { count: 'exact' });
 
-    // Lọc theo danh mục
     if (categoryName) {
         query = query.eq('category', categoryName);
     }
 
-    // Tìm kiếm
     if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,desc.ilike.%${searchTerm}%`);
     }
@@ -328,14 +302,11 @@ async function fetchProducts(page = 1, searchTerm = '', categoryName = null) {
     if (error) {
         console.error(error);
         grid.innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Lỗi tải sản phẩm</p>`;
-        return { products: [], total: 0 };
+        return;
     }
 
-    totalProducts = count || 0;
     renderProducts(data || []);
-    renderPagination(totalProducts);
-
-    return { products: data || [], total: totalProducts };
+    renderPagination(count || 0);
 }
 
 function renderProducts(products) {
@@ -358,15 +329,14 @@ function renderProducts(products) {
             : `<div class="text-[#f06292] font-bold text-lg">${Number(p.price).toLocaleString('vi-VN')} ₫</div>`;
 
         return `
-            <div class="product-card bg-white rounded-lg overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
+            <div class="product-card bg-white rounded-2xl overflow-hidden shadow cursor-pointer h-full flex flex-col" onclick="showProductDetail('${p.id}')">
                 <div class="product-image-container">
-                    <img src="${firstImage}" class="product-img rounded-lg" alt="${p.name}">
+                    <img src="${firstImage}" class="product-img" alt="${p.name}">
                     ${p.category ? `<div class="category-badge">${p.category}</div>` : ''}
                 </div>
                 <div class="p-5 flex-1 flex flex-col">
                     <h3 class="font-semibold text-base line-clamp-2 flex-1">${p.name}</h3>
                     ${priceHTML}
-                    
                     <div class="flex items-center justify-between mt-4 text-sm">
                         <div class="flex items-center gap-1">
                             <span class="text-yellow-400 text-xl">★</span>
@@ -374,8 +344,7 @@ function renderProducts(products) {
                             <span class="text-gray-500 text-xs">(${reviewCount} đánh giá)</span>
                         </div>
                         <div class="sold-badge hidden md:flex">
-                            <i class="fa-solid fa-fire text-sm"></i>
-                            Đã bán ${sold}
+                            <i class="fa-solid fa-fire text-sm"></i> Đã bán ${sold}
                         </div>
                     </div>
 
@@ -409,22 +378,34 @@ function addToCart(id, name, price, image) {
     alert(`${name} đã được thêm vào giỏ hàng!`);
 }
 
-// ==================== ÁP DỤNG LỌC + PHÂN TRANG ====================
+// ==================== ÁP DỤNG LỌC ====================
 async function applyFilters() {
     currentSearch = document.getElementById('searchInput').value.toLowerCase().trim();
-    currentPage = currentPage || 1;
     await fetchProducts(currentPage, currentSearch, currentCategoryName);
 }
 
-// ==================== LOAD DỮ LIỆU BAN ĐẦU ====================
+// ==================== LOAD DỮ LIỆU + ĐỌC CATEGORY TỪ URL ====================
 async function loadData() {
     try {
+        // Lấy danh sách categories
         const { data: categories } = await client.from('categories').select('name').order('name');
         allCategories = categories || [];
         renderCategoryDropdown();
 
-        // Load trang đầu tiên
-        await fetchProducts(1, '', null);
+        // Đọc category từ URL (từ trang index chuyển sang)
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryFromUrl = urlParams.get('category');
+
+        if (categoryFromUrl) {
+            currentCategoryName = categoryFromUrl;
+            document.getElementById('pageTitle').textContent = categoryFromUrl;
+        } else {
+            document.getElementById('pageTitle').textContent = "Tất cả sản phẩm";
+        }
+
+        // Load sản phẩm trang đầu tiên
+        await fetchProducts(1, '', currentCategoryName);
+
     } catch (e) {
         console.error(e);
         document.getElementById('productsGrid').innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Không thể tải dữ liệu</p>`;

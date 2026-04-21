@@ -570,54 +570,67 @@ async function updateVisitCount() {
         }
 
         function renderSidebarCategories() {
-            const container = document.getElementById('sidebarCategories');
-            let html = `
-                <div onclick="selectCategory(null)" class="category-item px-5 py-3.5 rounded-2xl cursor-pointer flex items-center gap-3 ${currentCategory === null ? 'active' : ''}">
-                    <i class="fa-solid fa-list-ul w-5"></i><span>Tất cả sản phẩm</span>
-                </div>
-            `;
-            allCategories.forEach(cat => {
-                html += `
-                    <div onclick="selectCategory('${cat.name}')" class="category-item px-5 py-3.5 rounded-2xl cursor-pointer flex items-center gap-3 ${currentCategory === cat.name ? 'active' : ''}">
-                        <i class="fa-solid fa-tag w-5"></i><span>${cat.name}</span>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
+    const container = document.getElementById('sidebarCategories');
+    let html = `
+        <div onclick="selectCategory(null)" 
+             class="category-item px-5 py-3.5 rounded-2xl cursor-pointer flex items-center gap-3 ${currentCategory === null ? 'active' : ''}">
+            <i class="fa-solid fa-list-ul w-5"></i>
+            <span>Tất cả sản phẩm</span>
+        </div>
+    `;
 
+    allCategories.forEach(cat => {
+        const isActive = currentCategory === cat.name;
+        html += `
+            <div onclick="selectCategory('${cat.name}')" 
+                 class="category-item px-5 py-3.5 rounded-2xl cursor-pointer flex items-center gap-3 ${isActive ? 'active' : ''}">
+                <i class="fa-solid fa-tag w-5"></i>
+                <span>${cat.name}</span>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
         function selectCategory(name) {
-            if (name === null) {
-                currentCategory = null;
-                renderSidebarCategories();
-                filterFeaturedProducts();
-            } else {
-                window.location.href = `sanpham.html?category=${encodeURIComponent(name)}`;
-            }
-        }
+    if (name === null) {
+        // Click "Tất cả sản phẩm" → lọc ngay trên trang chủ
+        currentCategory = null;
+        renderSidebarCategories();
+        filterFeaturedProducts();
+    } else {
+        // Click danh mục cụ thể → chuyển sang trang sản phẩm và lọc theo danh mục
+        window.location.href = `sanpham.html?category=${encodeURIComponent(name)}`;
+    }
+}
 
         function resetCategory() {
-            currentCategory = null;
-            renderSidebarCategories();
-            filterFeaturedProducts();
-        }
+    currentCategory = null;
+    document.getElementById('featuredSearch').value = '';   // xóa từ khóa tìm kiếm
+    renderSidebarCategories();
+    filterFeaturedProducts();
+}
 
         function filterFeaturedProducts() {
-            let filtered = allProducts;
-            if (currentCategory) {
-                filtered = currentCategory === 'Nội thất' 
-                    ? filtered.filter(p => p.category && p.category.includes('Nội thất'))
-                    : filtered.filter(p => p.category === currentCategory);
-            }
-            const search = document.getElementById('featuredSearch').value.toLowerCase().trim();
-            if (search) {
-                filtered = filtered.filter(p => 
-                    p.name.toLowerCase().includes(search) || 
-                    (p.desc && p.desc.toLowerCase().includes(search))
-                );
-            }
-            renderFeaturedProducts(filtered.slice(0, 6));
-        }
+    let filtered = allProducts;
+
+    if (currentCategory) {
+        filtered = currentCategory === 'Nội thất' 
+            ? filtered.filter(p => p.category && p.category.includes('Nội thất'))
+            : filtered.filter(p => p.category === currentCategory);
+    }
+
+    const search = document.getElementById('featuredSearch').value.toLowerCase().trim();
+    if (search) {
+        filtered = filtered.filter(p => 
+            p.name.toLowerCase().includes(search) || 
+            (p.desc && p.desc.toLowerCase().includes(search))
+        );
+    }
+
+    renderFeaturedProducts(filtered.slice(0, 6));
+    renderSidebarCategories();   // ← Thêm dòng này để cập nhật active
+}
 
         function renderFeaturedProducts(products) {
             const grid = document.getElementById('featuredGrid');
