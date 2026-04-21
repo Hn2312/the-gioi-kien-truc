@@ -210,36 +210,65 @@ function resetFilter() {
     loadRevenueStats();
 }
 
-// ==================== XUẤT PDF (ẨN NÚT TỰ ĐỘNG) ====================
+// ==================== XUẤT PDF (TIÊU ĐỀ CĂN GIỮA TRANG) ====================
 async function exportPDF() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
 
-    // Tạm ẩn nút trước khi chụp
-    const buttons = document.querySelectorAll('#reportContent .flex.gap-3');
-    if (buttons.length > 0) buttons[0].style.display = 'none';
+    // Tạm ẩn các phần không muốn xuất PDF
+    const filterSection = document.querySelector('.bg-white.rounded-3xl.p-6.shadow-xl.mb-8'); 
+    const headerButtons = document.querySelector('#reportContent > div:first-child');
 
+    const originalFilterDisplay = filterSection ? filterSection.style.display : '';
+    const originalHeaderDisplay = headerButtons ? headerButtons.style.display : '';
+
+    if (filterSection) filterSection.style.display = 'none';
+    if (headerButtons) headerButtons.style.display = 'none';
+
+    // === THÊM TIÊU ĐỀ BÁO CÁO CĂN GIỮA ===
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("BÁO CÁO THỐNG KÊ DOANH THU", 105, 25, { align: "center" });
+
+    // Thêm ngày xuất báo cáo (căn giữa, nhỏ hơn)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Ngày xuất: ${new Date().toLocaleDateString('vi-VN', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    })}`, 105, 33, { align: "center" });
+
+    // === Chụp nội dung thống kê ===
     const element = document.getElementById('reportContent');
     
     const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 2.2,           // tăng độ nét
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#fce7f3'
     });
 
-    // Hiện lại nút sau khi chụp
-    if (buttons.length > 0) buttons[0].style.display = 'flex';
+    // Khôi phục hiển thị sau khi chụp
+    if (filterSection) filterSection.style.display = originalFilterDisplay;
+    if (headerButtons) headerButtons.style.display = originalHeaderDisplay;
 
     const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfWidth = doc.internal.pageSize.getWidth();   // 210mm
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    // Thêm nội dung vào PDF (bắt đầu từ y = 45 để không đè tiêu đề)
+    doc.addImage(imgData, 'PNG', 0, 45, pdfWidth, pdfHeight);
 
+    // Lưu file
     doc.save(`BaoCao_DoanhThu_${new Date().toISOString().slice(0,10)}.pdf`);
-    alert("✅ Đã xuất file PDF thành công!\nChữ tiếng Việt và bố cục đã đẹp.");
-}
 
+    alert("✅ Đã xuất file PDF thành công!\nTiêu đề đã được căn giữa trang.");
+}
 // Khởi động
 window.onload = () => {
     loadRevenueStats();
