@@ -96,17 +96,7 @@
     </style>
 </head>
 <body class="tailwind-ready bg-gray-50">
-        <!-- Top Bar - Chỉ web con -->
-    <div class="bg-[#f06292] text-white py-3 text-sm border-b border-pink-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-2">
-            Web con chuyên Năng Lượng và Chăn Nuôi : 
-            <a href="https://trangtraixanh.vn" 
-               target="_blank" 
-               class="font-semibold hover:text-pink-200 hover:underline transition-colors">
-                trangtraixanh.vn
-            </a>
-        </div>
-    </div>
+        
     <!-- NAVBAR -->
     <nav class="bg-[#f06292] text-white sticky top-0 z-50 shadow-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
@@ -390,14 +380,27 @@
                         </div>
                     </div>
 
-                    <!-- Mã QR -->
-                    <div class="bg-white border border-pink-100 rounded-3xl p-6 text-center">
-                        <p class="text-gray-600 mb-4">Quét mã QR để truy cập website nhanh</p>
-                        <div class="inline-block bg-white p-4 rounded-2xl shadow">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://xaydunguocmo.com" 
-                                 alt="QR Code" class="w-52 h-52">
+                                        <!-- Mã QR + Web con -->
+                    <div class="bg-white border border-pink-100 rounded-3xl p-6 text-center space-y-6">
+                        <div>
+                            <p class="text-gray-600 mb-4">Quét mã QR để truy cập website nhanh</p>
+                            <div class="inline-block bg-white p-4 rounded-2xl shadow">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://xaydunguocmo.com" 
+                                     alt="QR Code" class="w-52 h-52">
+                            </div>
+                            <p class="text-xs text-gray-400 mt-4">https://xaydunguocmo.com</p>
                         </div>
-                        <p class="text-xs text-gray-400 mt-4">https://xaydunguocmo.com</p>
+
+                        <!-- Web con - Chuyển xuống dưới -->
+                        <div class="pt-4 border-t border-pink-200">
+                            <p class="text-sm text-gray-600 mb-2">Web con chuyên Năng Lượng và Chăn Nuôi:</p>
+                            <a href="https://trangtraixanh.vn" 
+                               target="_blank" 
+                               class="inline-flex items-center gap-2 bg-pink-50 hover:bg-pink-100 text-[#f06292] font-semibold px-5 py-2.5 rounded-2xl transition-all">
+                                <i class="fa-solid fa-leaf"></i>
+                                trangtraixanh.vn
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Lượt truy cập thật -->
