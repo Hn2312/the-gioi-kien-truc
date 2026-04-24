@@ -282,8 +282,8 @@ async function loadProductDetail() {
 
                 <!-- Nút hành động chính -->
                 <button onclick="handleMainAction()" 
-                        class="w-full ${isSpecialCategory ? 'bg-gradient-to-r from-[#f06292] to-[#ec407a]' : 'bg-[#f06292]'} hover:brightness-110 text-white py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
-                    ${isSpecialCategory ? '<i class="fa-solid fa-paper-plane"></i> 📋 Yêu cầu báo giá' : '<i class="fa-solid fa-cart-plus"></i> 🛒 Thêm vào giỏ hàng'}
+                        class="w-full bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-comments"></i> Đặt thiết kế riêng - Nhấp vào đây
                 </button>
 
                 <button onclick="window.history.back()" 
@@ -302,7 +302,7 @@ async function loadProductDetail() {
 
     document.getElementById('productDetail').innerHTML = html;
 
-    // Render phần cho sản phẩm thường
+    // Render cho sản phẩm thường
     if (!isSpecialCategory) {
         if (p.price_to && p.price_to > p.price) renderPriceOptions();
         renderColorOptions();
@@ -404,9 +404,9 @@ function handleMainAction() {
     const isSpecialCategory = SPECIAL_CATEGORIES.some(cat => categoryLower.includes(cat));
 
     if (isSpecialCategory) {
-        // Yêu cầu báo giá → Mở Zalo
+        // Mở Zalo cho gói trọn gói
         window.open('https://zalo.me/0987042718', '_blank');
-        alert(`✅ Đang chuyển đến Zalo để yêu cầu báo giá cho "${currentProduct.name}"\n\nVui lòng mô tả thêm nhu cầu của bạn!`);
+        alert(`✅ Đang chuyển đến Zalo để đặt thiết kế riêng cho "${currentProduct.name}"\n\nVui lòng cho chúng tôi biết thêm yêu cầu của bạn!`);
     } else {
         // Sản phẩm thường → Thêm vào giỏ hàng
         addToCart();
