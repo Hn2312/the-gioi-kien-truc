@@ -13,12 +13,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
         .heading-font { font-family: 'Playfair Display', sans-serif; }
         
-        .main-image {
-            transition: all 0.4s ease;
-        }
-        .thumbnail {
-            transition: all 0.3s ease;
-        }
+        .main-image { transition: all 0.4s ease; }
+        .thumbnail { transition: all 0.3s ease; }
         .thumbnail.active {
             border: 3px solid #f06292;
             transform: scale(1.05);
@@ -146,7 +142,7 @@ let selectedColor = "Trắng";
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('id');
 
-// Danh mục đặc biệt: không hiển thị kích thước, giá ước tính, chọn mức giá
+// Danh mục đặc biệt
 const SPECIAL_CATEGORIES = ["xây nhà trọn gói", "nội thất trọn gói"];
 
 const colorOptions = [
@@ -188,9 +184,8 @@ async function loadProductDetail() {
 
     const categoryLower = (p.category || '').toLowerCase().trim();
     const isSpecialCategory = SPECIAL_CATEGORIES.some(cat => categoryLower.includes(cat));
-
-    const isFurniture = p.category && p.category.toLowerCase().includes('nội thất');
-    const isAluminumGlass = p.category && p.category.toLowerCase().includes('nhôm kính');
+    const isXayNhaTronGoi = categoryLower.includes("xây nhà trọn gói");
+    const isNoiThatTronGoi = categoryLower.includes("nội thất trọn gói");
 
     selectedPrice = Number(p.price) || 0;
 
@@ -223,7 +218,7 @@ async function loadProductDetail() {
                     <button onclick="nextImage()" class="px-6 py-4 bg-gray-100 hover:bg-gray-200 rounded-3xl text-xl"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>` : ''}
 
-                <!-- Mô tả - Desktop -->
+                <!-- Mô tả Desktop -->
                 <div class="hidden lg:block border border-gray-200 rounded-3xl p-6">
                     <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
                     <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
@@ -243,22 +238,11 @@ async function loadProductDetail() {
                 </div>
 
                 ${!isSpecialCategory ? `
-                <!-- Phần chọn giá, kích thước, màu cho sản phẩm thường -->
+                <!-- Sản phẩm thông thường -->
                 <div id="priceSelectionSection"></div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Kích thước (m)</label>
-                    ${isAluminumGlass ? `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <input type="number" step="0.01" id="width" placeholder="Rộng (m)" class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-[#f06292] focus:outline-none text-center text-lg" oninput="calculatePrice()">
-                            <p class="text-xs text-center text-gray-500 mt-1">Rộng (m)</p>
-                        </div>
-                        <div>
-                            <input type="number" step="0.01" id="height" placeholder="Cao (m)" class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-[#f06292] focus:outline-none text-center text-lg" oninput="calculatePrice()">
-                            <p class="text-xs text-center text-gray-500 mt-1">Cao (m)</p>
-                        </div>
-                    </div>` : `
                     <div class="grid grid-cols-3 gap-4">
                         <div>
                             <input type="number" step="0.01" id="length" placeholder="Dài (m)" class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-[#f06292] focus:outline-none text-center text-lg" oninput="calculatePrice()">
@@ -272,7 +256,7 @@ async function loadProductDetail() {
                             <input type="number" step="0.01" id="height" placeholder="Cao (m)" class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-[#f06292] focus:outline-none text-center text-lg" oninput="calculatePrice()">
                             <p class="text-xs text-center text-gray-500 mt-1">Cao (m)</p>
                         </div>
-                    </div>`}
+                    </div>
                 </div>
 
                 <div>
@@ -288,39 +272,26 @@ async function loadProductDetail() {
                     <p class="text-xs text-gray-500 mt-2">Giá có thể thay đổi tùy chất liệu và thi công thực tế</p>
                 </div>
                 ` : `
-                <!-- Nội thất trọn gói hoặc Xây nhà trọn gói -->
+                <!-- Gói trọn gói -->
+                ${!isXayNhaTronGoi ? `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Chọn màu sắc</label>
                     <div class="flex flex-wrap gap-4" id="colorPicker"></div>
-                </div>`}
+                </div>` : ''}
+                `}
 
-                <button onclick="showRealModal()" class="w-full bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-camera"></i> 📸 Xem mẫu thực tế lắp đặt
+                <!-- Nút hành động chính -->
+                <button onclick="handleMainAction()" 
+                        class="w-full ${isSpecialCategory ? 'bg-gradient-to-r from-[#f06292] to-[#ec407a]' : 'bg-[#f06292]'} hover:brightness-110 text-white py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
+                    ${isSpecialCategory ? '<i class="fa-solid fa-paper-plane"></i> 📋 Yêu cầu báo giá' : '<i class="fa-solid fa-cart-plus"></i> 🛒 Thêm vào giỏ hàng'}
                 </button>
 
-                ${isFurniture ? `
-                <div class="mt-4">
-                    <a href="https://zalo.me/0987042718" target="_blank" 
-                       class="block w-full text-center bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
-                        <i class="fa-solid fa-comments"></i> Đặt thiết kế riêng - Nhấp vào đây
-                    </a>
-                    <p class="text-center text-sm text-gray-500 mt-3">
-                        Hoặc gọi ngay: <a href="tel:0987042718" class="font-medium text-[#f06292]">0987 042 718</a>
-                    </p>
-                </div>` : ''}
+                <button onclick="window.history.back()" 
+                        class="w-full border border-gray-300 hover:bg-gray-50 py-5 rounded-3xl font-semibold text-lg">
+                    ← Quay lại
+                </button>
 
-                <div class="flex gap-4">
-                    <button onclick="addCustomToCart()" 
-                            class="flex-1 bg-[#f06292] hover:bg-[#ec407a] text-white py-5 rounded-3xl font-semibold text-lg">
-                        🛒 Thêm vào giỏ hàng
-                    </button>
-                    <button onclick="window.history.back()" 
-                            class="flex-1 border border-gray-300 hover:bg-gray-50 py-5 rounded-3xl font-semibold text-lg">
-                        ← Quay lại
-                    </button>
-                </div>
-
-                <!-- Mô tả - Mobile -->
+                <!-- Mô tả Mobile -->
                 <div class="lg:hidden border border-gray-200 rounded-3xl p-6 mt-8">
                     <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
                     <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
@@ -331,14 +302,14 @@ async function loadProductDetail() {
 
     document.getElementById('productDetail').innerHTML = html;
 
-    // Render các phần chỉ áp dụng cho sản phẩm thường
+    // Render phần cho sản phẩm thường
     if (!isSpecialCategory) {
-        if (p.price_to && p.price_to > p.price) {
-            renderPriceOptions();
-        }
+        if (p.price_to && p.price_to > p.price) renderPriceOptions();
         renderColorOptions();
         calculatePrice();
-    } else {
+    } 
+    // Render màu chỉ cho Nội thất trọn gói
+    else if (isNoiThatTronGoi) {
         renderSpecialColorPicker();
     }
 
@@ -414,23 +385,35 @@ function nextImage() {
 function calculatePrice() {
     if (!currentProduct) return;
     let estimatedPrice = selectedPrice;
-
     const length = parseFloat(document.getElementById('length')?.value) || 0;
     const width = parseFloat(document.getElementById('width')?.value) || 0;
     const height = parseFloat(document.getElementById('height')?.value) || 0;
 
     const area = (length * width * height) || (width * height);
-    if (area > 0) {
-        estimatedPrice = Math.round(area * selectedPrice);
-    }
+    if (area > 0) estimatedPrice = Math.round(area * selectedPrice);
 
     const estEl = document.getElementById('estimatedPrice');
     if (estEl) estEl.textContent = estimatedPrice.toLocaleString('vi-VN') + ' ₫';
 }
 
-function addCustomToCart() {
+// ==================== HÀNH ĐỘNG CHÍNH ====================
+function handleMainAction() {
     if (!currentProduct) return;
 
+    const categoryLower = (currentProduct.category || '').toLowerCase().trim();
+    const isSpecialCategory = SPECIAL_CATEGORIES.some(cat => categoryLower.includes(cat));
+
+    if (isSpecialCategory) {
+        // Yêu cầu báo giá → Mở Zalo
+        window.open('https://zalo.me/0987042718', '_blank');
+        alert(`✅ Đang chuyển đến Zalo để yêu cầu báo giá cho "${currentProduct.name}"\n\nVui lòng mô tả thêm nhu cầu của bạn!`);
+    } else {
+        // Sản phẩm thường → Thêm vào giỏ hàng
+        addToCart();
+    }
+}
+
+function addToCart() {
     const item = {
         id: currentProduct.id,
         name: currentProduct.name,
@@ -483,7 +466,7 @@ function showError(msg) {
         </div>`;
 }
 
-// Khởi tạo trang
+// Khởi tạo
 window.onload = () => {
     loadProductDetail();
     updateCartCount();
