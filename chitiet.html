@@ -24,7 +24,6 @@
             transform: scale(1.05);
         }
 
-        /* Badge Danh mục nằm trên góc trái ảnh */
         .category-badge {
             position: absolute;
             top: 16px;
@@ -130,7 +129,7 @@
     </div>
 
 <script>
-// ==================== SUPABASE ====================
+// ==================== SUPABASE CONFIG ====================
 const SUPABASE_URL = 'https://bmtoaaajobrqgmjidtgf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_GmghtWzyLip_Jc-yge9K8Q_7gKMGoIO'; 
 const { createClient } = supabase;
@@ -142,12 +141,13 @@ let currentImages = [];
 let currentRealImages = [];
 let currentIndex = 0;
 let selectedPrice = 0;
-let isFurniture = false;
-let isAluminumGlass = false;
 let selectedColor = "Trắng";
 
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('id');
+
+// Danh mục đặc biệt: không hiển thị kích thước, giá ước tính, chọn mức giá
+const SPECIAL_CATEGORIES = ["xây nhà trọn gói", "nội thất trọn gói"];
 
 const colorOptions = [
     { name: "Trắng", value: "#f8fafc" },
@@ -186,9 +186,13 @@ async function loadProductDetail() {
     currentRealImages = Array.isArray(p.real_images) && p.real_images.length > 0 ? p.real_images : [];
     currentIndex = 0;
 
-    isFurniture = p.category && p.category.toLowerCase().includes('nội thất');
-    isAluminumGlass = p.category && p.category.toLowerCase().includes('nhôm kính');
-    selectedPrice = Number(p.price);
+    const categoryLower = (p.category || '').toLowerCase().trim();
+    const isSpecialCategory = SPECIAL_CATEGORIES.some(cat => categoryLower.includes(cat));
+
+    const isFurniture = p.category && p.category.toLowerCase().includes('nội thất');
+    const isAluminumGlass = p.category && p.category.toLowerCase().includes('nhôm kính');
+
+    selectedPrice = Number(p.price) || 0;
 
     let priceHTML = '';
     if (p.price_to && p.price_to > p.price) {
@@ -199,14 +203,11 @@ async function loadProductDetail() {
 
     const html = `
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 p-6 md:p-10 bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <!-- CỘT TRÁI: ẢNH + MÔ TẢ LAPTOP -->
+            <!-- CỘT TRÁI: ẢNH -->
             <div class="space-y-6">
                 <div class="product-image-container relative">
                     <img id="mainImage" src="${currentImages[0]}" class="w-full rounded-2xl shadow-xl main-image" alt="${p.name}">
-                    ${p.category ? `
-                    <div class="category-badge">
-                        ${p.category}
-                    </div>` : ''}
+                    ${p.category ? `<div class="category-badge">${p.category}</div>` : ''}
                 </div>
 
                 <div class="flex gap-3 mt-6 overflow-x-auto pb-3 snap-x" id="thumbnails">
@@ -222,28 +223,27 @@ async function loadProductDetail() {
                     <button onclick="nextImage()" class="px-6 py-4 bg-gray-100 hover:bg-gray-200 rounded-3xl text-xl"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>` : ''}
 
-                <!-- Mô tả sản phẩm - Chỉ hiển thị trên laptop -->
+                <!-- Mô tả - Desktop -->
                 <div class="hidden lg:block border border-gray-200 rounded-3xl p-6">
                     <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
                     <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
                 </div>
             </div>
 
-            <!-- CỘT PHẢI: Thông tin -->
+            <!-- CỘT PHẢI: THÔNG TIN -->
             <div class="space-y-8">
-                                <div>
+                <div>
                     <h1 class="heading-font product-title font-bold text-gray-800">${p.name}</h1>
                     <div class="mt-5 flex items-center gap-3">
                         ${priceHTML}
                         <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-sm font-medium px-3 py-1 rounded-2xl">
-                            <i class="fa-solid fa-circle-check"></i>
-                            Còn hàng
+                            <i class="fa-solid fa-circle-check"></i> Còn hàng
                         </span>
                     </div>
                 </div>
 
-                ${!isFurniture ? `
-                <!-- Chọn mức giá, kích thước, màu... giữ nguyên -->
+                ${!isSpecialCategory ? `
+                <!-- Phần chọn giá, kích thước, màu cho sản phẩm thường -->
                 <div id="priceSelectionSection"></div>
 
                 <div>
@@ -288,16 +288,10 @@ async function loadProductDetail() {
                     <p class="text-xs text-gray-500 mt-2">Giá có thể thay đổi tùy chất liệu và thi công thực tế</p>
                 </div>
                 ` : `
+                <!-- Nội thất trọn gói hoặc Xây nhà trọn gói -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Chọn màu sắc</label>
-                    <div class="flex flex-wrap gap-4" id="colorPicker">
-                        ${colorOptions.map((c, idx) => `
-                            <div onclick="selectColor(this, '${c.name}')" 
-                                 class="color-swatch ${idx === 0 ? 'active' : ''}" 
-                                 style="background-color: ${c.value}" 
-                                 title="${c.name}"></div>
-                        `).join('')}
-                    </div>
+                    <div class="flex flex-wrap gap-4" id="colorPicker"></div>
                 </div>`}
 
                 <button onclick="showRealModal()" class="w-full bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
@@ -326,7 +320,7 @@ async function loadProductDetail() {
                     </button>
                 </div>
 
-                <!-- Mô tả sản phẩm - Chỉ hiển thị trên mobile -->
+                <!-- Mô tả - Mobile -->
                 <div class="lg:hidden border border-gray-200 rounded-3xl p-6 mt-8">
                     <h3 class="font-semibold text-lg mb-3">Mô tả sản phẩm</h3>
                     <p class="text-gray-600 leading-relaxed whitespace-pre-line">${p.desc || 'Đang cập nhật mô tả chi tiết...'}</p>
@@ -337,21 +331,23 @@ async function loadProductDetail() {
 
     document.getElementById('productDetail').innerHTML = html;
 
-    if (!isFurniture && p.price_to && p.price_to > p.price) {
-        renderPriceOptions();
-    }
-
-    if (!isFurniture) {
+    // Render các phần chỉ áp dụng cho sản phẩm thường
+    if (!isSpecialCategory) {
+        if (p.price_to && p.price_to > p.price) {
+            renderPriceOptions();
+        }
         renderColorOptions();
         calculatePrice();
+    } else {
+        renderSpecialColorPicker();
     }
 
     updateCartCount();
 }
 
-// ==================== Các hàm giữ nguyên ====================
 function renderPriceOptions() {
     const section = document.getElementById('priceSelectionSection');
+    if (!section) return;
     let html = `<label class="block text-sm font-medium text-gray-700 mb-3">Chọn mức giá</label><div class="flex flex-wrap gap-3">`;
     const start = Number(currentProduct.price);
     const end = Number(currentProduct.price_to);
@@ -371,6 +367,34 @@ function selectPrice(price) {
     calculatePrice();
 }
 
+function renderColorOptions() {
+    const container = document.getElementById('colorOptions');
+    if (!container) return;
+    container.innerHTML = colorOptions.map((c, idx) => `
+        <div onclick="selectColor(this, '${c.name}')" 
+             class="color-swatch ${idx === 0 ? 'active' : ''}" 
+             style="background-color: ${c.value}" 
+             title="${c.name}"></div>
+    `).join('');
+}
+
+function renderSpecialColorPicker() {
+    const container = document.getElementById('colorPicker');
+    if (!container) return;
+    container.innerHTML = colorOptions.map((c, idx) => `
+        <div onclick="selectColor(this, '${c.name}')" 
+             class="color-swatch ${idx === 0 ? 'active' : ''}" 
+             style="background-color: ${c.value}" 
+             title="${c.name}"></div>
+    `).join('');
+}
+
+function selectColor(el, val) {
+    document.querySelectorAll('.color-swatch').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    selectedColor = val;
+}
+
 function changeMainImage(index) {
     currentIndex = index;
     document.getElementById('mainImage').src = currentImages[index];
@@ -387,38 +411,21 @@ function nextImage() {
     changeMainImage(newIndex);
 }
 
-function renderColorOptions() {
-    const container = document.getElementById('colorOptions');
-    container.innerHTML = colors.map(c => `
-        <div onclick="selectColor(this, '${c.value}')" 
-             class="color-option w-10 h-10 rounded-2xl cursor-pointer border-4 border-white shadow-md" 
-             style="background-color: ${c.value}" 
-             title="${c.name}"></div>
-    `).join('');
-    if (container.children[0]) container.children[0].classList.add('ring-4', 'ring-[#f06292]');
-}
-
-function selectColor(el, val) {
-    document.querySelectorAll('.color-option').forEach(e => e.classList.remove('ring-4', 'ring-[#f06292]'));
-    el.classList.add('ring-4', 'ring-[#f06292]');
-    selectedColor = val;
-}
-
 function calculatePrice() {
     if (!currentProduct) return;
-    let estimatedPrice = 0;
-    if (isAluminumGlass) {
-        const widthM = parseFloat(document.getElementById('width').value) || 0;
-        const heightM = parseFloat(document.getElementById('height').value) || 0;
-        const area = widthM * heightM;
-        estimatedPrice = Math.round(area * selectedPrice);
-    } else if (!isFurniture) {
-        const widthM = parseFloat(document.getElementById('width').value) || 0;
-        const heightM = parseFloat(document.getElementById('height').value) || 0;
-        const area = widthM * heightM;
+    let estimatedPrice = selectedPrice;
+
+    const length = parseFloat(document.getElementById('length')?.value) || 0;
+    const width = parseFloat(document.getElementById('width')?.value) || 0;
+    const height = parseFloat(document.getElementById('height')?.value) || 0;
+
+    const area = (length * width * height) || (width * height);
+    if (area > 0) {
         estimatedPrice = Math.round(area * selectedPrice);
     }
-    document.getElementById('estimatedPrice').textContent = estimatedPrice.toLocaleString('vi-VN') + ' ₫';
+
+    const estEl = document.getElementById('estimatedPrice');
+    if (estEl) estEl.textContent = estimatedPrice.toLocaleString('vi-VN') + ' ₫';
 }
 
 function addCustomToCart() {
@@ -429,15 +436,15 @@ function addCustomToCart() {
         name: currentProduct.name,
         price: selectedPrice,
         image: currentImages[currentIndex],
-        color: isFurniture ? selectedColor : '',
-        size: isFurniture ? 'Thiết kế riêng' : 'Theo yêu cầu',
+        color: selectedColor,
+        size: "Theo yêu cầu",
         quantity: 1
     };
 
     cart.push(item);
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
-    alert(`✅ Đã thêm "${currentProduct.name}" ${isFurniture ? `(${selectedColor})` : ''} vào giỏ hàng!`);
+    alert(`✅ Đã thêm "${currentProduct.name}" vào giỏ hàng!`);
 }
 
 function showRealModal() {
@@ -450,14 +457,18 @@ function showRealModal() {
     document.getElementById('modalMainImage').src = currentRealImages[0];
     const thumbContainer = document.getElementById('modalThumbnails');
     thumbContainer.innerHTML = currentRealImages.map((img, idx) => `
-        <img onclick="modalChangeImage(${idx})" src="${img}" class="w-24 h-24 object-cover rounded-2xl cursor-pointer flex-shrink-0 snap-center ${idx === 0 ? 'ring-4 ring-[#f06292]' : ''}">
+        <img onclick="modalChangeImage(${idx})" src="${img}" 
+             class="w-24 h-24 object-cover rounded-2xl cursor-pointer flex-shrink-0 snap-center ${idx === 0 ? 'ring-4 ring-[#f06292]' : ''}">
     `).join('');
 }
 
 function modalChangeImage(idx) {
     document.getElementById('modalMainImage').src = currentRealImages[idx];
     const thumbs = document.getElementById('modalThumbnails').children;
-    Array.from(thumbs).forEach((t, i) => t.classList.toggle('ring-4', i === idx));
+    Array.from(thumbs).forEach((t, i) => {
+        t.classList.toggle('ring-4', i === idx);
+        t.classList.toggle('ring-[#f06292]', i === idx);
+    });
 }
 
 function closeRealModal() {
@@ -472,7 +483,7 @@ function showError(msg) {
         </div>`;
 }
 
-// Khởi tạo
+// Khởi tạo trang
 window.onload = () => {
     loadProductDetail();
     updateCartCount();
