@@ -142,7 +142,7 @@ let selectedColor = "Trắng";
 const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get('id');
 
-const SPECIAL_CATEGORIES = ["xây nhà trọn gói", "nội thất trọn gói"];
+const ONLY_DESIGN_CATEGORIES = ["xây nhà trọn gói", "nội thất trọn gói", "nhôm kính"];
 
 const colorOptions = [
     { name: "Trắng", value: "#f8fafc" },
@@ -153,7 +153,7 @@ const colorOptions = [
     { name: "Be", value: "#d2b48c" }
 ];
 
-// ==================== FORMAT GIÁ (KHÔNG CÓ ₫) ====================
+// ==================== FORMAT GIÁ ====================
 function formatLargePrice(price) {
     price = Number(price);
     if (isNaN(price) || price === 0) return '0';
@@ -174,7 +174,19 @@ function updateCartCount() {
     badge.classList.toggle('hidden', count === 0);
 }
 
+function checkLogin() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        if (confirm("Bạn chưa đăng nhập. Chuyển đến trang đăng nhập ngay?")) {
+            window.location.href = 'auth.html';
+        }
+        return false;
+    }
+    return true;
+}
+
 function goToCart() {
+    if (!checkLogin()) return;
     window.location.href = 'giohang.html';
 }
 
@@ -196,9 +208,7 @@ async function loadProductDetail() {
     currentIndex = 0;
 
     const categoryLower = (p.category || '').toLowerCase().trim();
-    const isSpecialCategory = SPECIAL_CATEGORIES.some(cat => categoryLower.includes(cat));
-    const isXayNhaTronGoi = categoryLower.includes("xây nhà trọn gói");
-    const isNoiThatTronGoi = categoryLower.includes("nội thất trọn gói");
+    const isOnlyDesign = ONLY_DESIGN_CATEGORIES.some(cat => categoryLower.includes(cat));
 
     selectedPrice = Number(p.price) || 0;
 
@@ -247,7 +257,7 @@ async function loadProductDetail() {
                     </div>
                 </div>
 
-                ${!isSpecialCategory ? `
+                ${!isOnlyDesign ? `
                 <div id="priceSelectionSection"></div>
 
                 <div>
@@ -272,17 +282,26 @@ async function loadProductDetail() {
                     <p class="text-xs text-gray-500 mt-2">Giá có thể thay đổi tùy chất liệu và thi công thực tế</p>
                 </div>
                 ` : `
-                ${!isXayNhaTronGoi ? `
+                ${!categoryLower.includes("xây nhà trọn gói") ? `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-4">Chọn màu sắc</label>
                     <div class="flex flex-wrap gap-4" id="colorPicker"></div>
                 </div>` : ''}
                 `}
 
-                <button onclick="handleMainAction()" 
-                        class="w-full bg-white border-2 border-[#f06292] text-[#f06292] hover:bg-[#fce7f3] py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-comments"></i> Đặt thiết kế riêng - Nhấp vào đây
-                </button>
+                <!-- NÚT HÀNH ĐỘNG -->
+                <div class="flex flex-col gap-4">
+                    ${!isOnlyDesign ? `
+                    <button onclick="addToCart()" 
+                            class="w-full bg-[#f06292] hover:bg-[#ec407a] text-white py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ hàng
+                    </button>` : ''}
+
+                    <button onclick="requestDesign()" 
+                            class="w-full ${isOnlyDesign ? 'bg-[#f06292] text-white' : 'bg-white border-2 border-[#f06292] text-[#f06292]'} hover:brightness-110 py-5 rounded-3xl font-semibold text-lg flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-comments"></i> Đặt thiết kế riêng - Nhấp vào đây
+                    </button>
+                </div>
 
                 <button onclick="window.history.back()" 
                         class="w-full border border-gray-300 hover:bg-gray-50 py-5 rounded-3xl font-semibold text-lg">
@@ -299,25 +318,50 @@ async function loadProductDetail() {
 
     document.getElementById('productDetail').innerHTML = html;
 
-    if (!isSpecialCategory) {
+    if (!isOnlyDesign) {
         if (p.price_to && p.price_to > p.price) renderPriceOptions();
         renderColorOptions();
         calculatePrice();
-    } else if (isNoiThatTronGoi) {
+    } else if (!categoryLower.includes("xây nhà trọn gói")) {
         renderSpecialColorPicker();
     }
 
     updateCartCount();
 }
 
-function renderPriceOptions() {
+function requestDesign() {
+    window.open('https://zalo.me/0987042718', '_blank');
+    alert(`✅ Đang chuyển đến Zalo để đặt thiết kế riêng cho "${currentProduct.name}"\n\nVui lòng cho chúng tôi biết thêm yêu cầu của bạn!`);
+}
+
+function addToCart() {
+    if (!checkLogin()) return;
+    if (!currentProduct) return;
+
+    const item = {
+        id: currentProduct.id,
+        name: currentProduct.name,
+        price: selectedPrice,
+        image: currentImages[currentIndex],
+        color: selectedColor,
+        size: "Theo yêu cầu",
+        quantity: 1
+    };
+
+    cart.push(item);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCount();
+    alert(`✅ Đã thêm "${currentProduct.name}" vào giỏ hàng!`);
+}
+
+// ==================== Các hàm khác ====================
+function renderPriceOptions() { /* ... giữ nguyên */ 
     const section = document.getElementById('priceSelectionSection');
     if (!section) return;
     let html = `<label class="block text-sm font-medium text-gray-700 mb-3">Chọn mức giá</label><div class="flex flex-wrap gap-3">`;
     const start = Number(currentProduct.price);
     const end = Number(currentProduct.price_to);
     const step = 100000;
-
     for (let price = start; price <= end; price += step) {
         const active = (price === selectedPrice) ? 'active' : '';
         html += `<button onclick="selectPrice(${price})" class="price-option px-6 py-3 border-2 border-gray-300 rounded-3xl text-base font-medium ${active}">${formatLargePrice(price)}</button>`;
@@ -387,35 +431,6 @@ function calculatePrice() {
 
     const estEl = document.getElementById('estimatedPrice');
     if (estEl) estEl.textContent = formatLargePrice(estimatedPrice);
-}
-
-function handleMainAction() {
-    if (!currentProduct) return;
-    const categoryLower = (currentProduct.category || '').toLowerCase().trim();
-    const isSpecialCategory = SPECIAL_CATEGORIES.some(cat => categoryLower.includes(cat));
-
-    if (isSpecialCategory) {
-        window.open('https://zalo.me/0987042718', '_blank');
-        alert(`✅ Đang chuyển đến Zalo để đặt thiết kế riêng cho "${currentProduct.name}"\n\nVui lòng cho chúng tôi biết thêm yêu cầu của bạn!`);
-    } else {
-        addToCart();
-    }
-}
-
-function addToCart() {
-    const item = {
-        id: currentProduct.id,
-        name: currentProduct.name,
-        price: selectedPrice,
-        image: currentImages[currentIndex],
-        color: selectedColor,
-        size: "Theo yêu cầu",
-        quantity: 1
-    };
-    cart.push(item);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    updateCartCount();
-    alert(`✅ Đã thêm "${currentProduct.name}" vào giỏ hàng!`);
 }
 
 function showRealModal() {

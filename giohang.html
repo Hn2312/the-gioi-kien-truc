@@ -228,6 +228,17 @@ window.onload = () => {
         document.getElementById('customerPhone').value = currentUser.phone || '';
     }
 };
+// Kiểm tra đã đăng nhập chưa
+function checkLogin() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        if (confirm("Bạn chưa đăng nhập. Chuyển đến trang đăng nhập ngay?")) {
+            window.location.href = 'auth.html';
+        }
+        return false;
+    }
+    return true;
+}
 </script>
 </body>
 </html>

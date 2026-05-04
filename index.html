@@ -671,14 +671,26 @@
         }
 
         function addToCart(id, name, price, image) {
-            const existing = cart.find(item => item.id === id);
-            if (existing) existing.quantity = (existing.quantity || 1) + 1;
-            else cart.push({ id, name, price, image, quantity: 1 });
+    if (!checkLogin()) return;   // ← Thêm dòng này
 
-            localStorage.setItem('cart', JSON.stringify(cart));
-            updateCartCount();
-            alert(`${name} đã được thêm vào giỏ hàng!`);
-        }
+    const existing = cart.find(item => item.id === id);
+    if (existing) {
+        existing.quantity = (existing.quantity || 1) + 1;
+    } else {
+        cart.push({ 
+            id, 
+            name, 
+            price, 
+            image, 
+            quantity: 1,
+            color: "" 
+        });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCount();
+    alert(`${name} đã được thêm vào giỏ hàng!`);
+}
 
         function updateCartCount() {
             const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -687,7 +699,10 @@
             badge.classList.toggle('hidden', count === 0);
         }
 
-        function goToCart() { window.location.href = 'giohang.html'; }
+        function goToCart() {
+    if (!checkLogin()) return;   // ← Thêm dòng này
+    window.location.href = 'giohang.html';
+}
         function showNotifications() { alert("Hiện chưa có thông báo nào."); }
 
         function handleAuthClick() {
@@ -751,6 +766,17 @@
             updateAuthButton();
             updateVisitCount();
         };
+        // Kiểm tra đã đăng nhập chưa
+function checkLogin() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        if (confirm("Bạn chưa đăng nhập. Chuyển đến trang đăng nhập ngay?")) {
+            window.location.href = 'auth.html';
+        }
+        return false;
+    }
+    return true;
+}
     </script>
 </body>
 </html>
